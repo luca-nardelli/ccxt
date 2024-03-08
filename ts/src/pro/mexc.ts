@@ -334,7 +334,7 @@ export default class mexc extends mexcRest {
             'method': 'SUBSCRIPTION',
             'params': [ channel ],
         };
-				// Here original code was passing channel, but we actually need to use messageHash as discriminator
+        // Here original code was passing channel, but we actually need to use messageHash as discriminator
         return await this.watch (url, messageHash, this.extend (request, params), messageHash);
     }
 

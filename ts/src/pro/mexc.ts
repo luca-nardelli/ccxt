@@ -166,7 +166,8 @@ export default class mexc extends mexcRest {
             'method': 'SUBSCRIPTION',
             'params': [ channel ],
         };
-        return await this.watch (url, messageHash, this.extend (request, params), channel);
+        // Here original code was passing channel, but we actually need to use messageHash as discriminator
+        return await this.watch (url, messageHash, this.extend (request, params), messageHash);
     }
 
     async watchSpotPrivate (channel, messageHash, params = {}) {
@@ -469,7 +470,11 @@ export default class mexc extends mexcRest {
             // we set client.subscriptions[messageHash] to 1
             // once we have received the first delta and initialized the orderbook
             client.subscriptions[messageHash] = 1;
-            this.orderbooks[symbol] = this.countedOrderBook ({});
+            this.orderbooks[symbol] = this.orderBook ({});
+        }
+        // If we don't have a subscription, ignore the message to prevent spamming errors
+        if (!subscription) {
+            return;
         }
         const storedOrderBook = this.orderbooks[symbol];
         const nonce = this.safeInteger (storedOrderBook, 'nonce');
@@ -488,6 +493,7 @@ export default class mexc extends mexcRest {
             storedOrderBook['timestamp'] = timestamp;
             storedOrderBook['datetime'] = this.iso8601 (timestamp);
         } catch (e) {
+            storedOrderBook['nonce'] = undefined; // Reset nonce to re-trigger snapshot fetching
             delete client.subscriptions[messageHash];
             client.reject (e, messageHash);
         }
@@ -1150,10 +1156,17 @@ export default class mexc extends mexcRest {
         //        "msg": "spot@public.increase.depth.v3.api@BTCUSDT"
         //    }
         //
+        //    This is sent when we try to re-subscribe to the same stream
+        //    {
+        //        id: 0,
+        //        code: 0,
+        //        msg: ''
+        //    }
+        //
         const msg = this.safeString (message, 'msg');
         if (msg === 'PONG') {
             this.handlePong (client, message);
-        } else if (msg.indexOf ('@') > -1) {
+        } else if (msg && msg.indexOf ('@') > -1) {
             const parts = msg.split ('@');
             const channel = this.safeString (parts, 1);
             const methods: Dict = {

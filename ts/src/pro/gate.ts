@@ -5,7 +5,7 @@ import gateRest from '../gate.js';
 import { AuthenticationError, BadRequest, ArgumentsRequired, InvalidNonce } from '../base/errors.js';
 import { ArrayCache, ArrayCacheByTimestamp, ArrayCacheBySymbolById, ArrayCacheBySymbolBySide } from '../base/ws/Cache.js';
 import { sha512 } from '../static_dependencies/noble-hashes/sha512.js';
-import type { Int, Str, Strings, OrderBook, Order, Trade, Ticker, Tickers, OHLCV, Position, Balances, Dict, Liquidation } from '../base/types.js';
+import type { Int, Str, Strings, OrderBook, Order, Trade, Ticker, Tickers, OHLCV, Position, Balances, Dict, Liquidation, Bbo } from '../base/types.js';
 import Client from '../base/ws/Client.js';
 import Precise from '../base/Precise.js';
 
@@ -330,6 +330,23 @@ export default class gate extends gateRest {
         //    }
         //
         this.handleTickerAndBidAsk ('ticker', client, message);
+    }
+
+    async watchBbo (symbol: string, params = {}): Promise<Bbo> {
+        const tickers = await this.watchBidsAsks ([ symbol ]);
+        const keys = Object.keys (tickers);
+        const key = keys[0];
+        if (key) {
+            const value = tickers[key];
+            return {
+                'symbol': key,
+                'timestamp': value['info']['t'],
+                'askPrice': value['info']['a'],
+                'askVolume': value['info']['A'],
+                'bidPrice': value['info']['b'],
+                'bidVolume': value['info']['B'],
+            };
+        }
     }
 
     async watchBidsAsks (symbols: Strings = undefined, params = {}): Promise<Tickers> {

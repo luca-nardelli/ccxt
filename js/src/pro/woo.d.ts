@@ -5,6 +5,8 @@ export default class woo extends wooRest {
     describe(): any;
     requestId(url: any): any;
     watchPublic(messageHash: any, message: any): Promise<any>;
+    watchBbo(symbol: string, limit?: Int, params?: {}): Promise<any>;
+    handleBbo(client: Client, message: any): void;
     watchOrderBook(symbol: string, limit?: Int, params?: {}): Promise<OrderBook>;
     handleOrderBook(client: Client, message: any): void;
     watchTicker(symbol: string, params?: {}): Promise<Ticker>;

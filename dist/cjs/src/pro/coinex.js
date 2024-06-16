@@ -523,6 +523,54 @@ class coinex extends coinex$1 {
         const orderbook = await this.watch(url, messageHash, request, subscriptionHash, request);
         return orderbook.limit();
     }
+    async watchBbo(symbol, params = {}) {
+        await this.loadMarkets();
+        const market = this.market(symbol);
+        const subscribe = {
+            'method': 'bbo.subscribe',
+            'params': [market['id']],
+            'id': this.requestId(),
+        };
+        const name = 'bbo';
+        const messageHash = name + ':' + symbol;
+        let type = undefined;
+        [type, params] = this.handleMarketTypeAndParams('watchOrderBook', market, params);
+        const url = this.urls['api']['ws'][type];
+        const request = this.deepExtend(subscribe, params);
+        const bbo = await this.watch(url, messageHash, request, messageHash, request);
+        return bbo;
+    }
+    handleBbo(client, message) {
+        // @see https://viabtc.github.io/coinex_api_en_doc/spot/#docsspot004_websocket048_bbo_subscribe_notify
+        // {
+        //   "method": "",
+        //   "params": {
+        //     "market": "BTCUSDT"
+        //     "time": 1656660154,
+        //     "bid_price": "20000",
+        //     "bid_amount": "0.1",
+        //     "ask_price": "200001",
+        //     "ask_amount": "0.15"
+        //   }
+        // }
+        const data = this.safeValue(message, 'params');
+        const marketId = this.safeString(data, 'market');
+        const defaultType = this.safeString(this.options, 'defaultType');
+        const market = this.safeMarket(marketId, undefined, undefined, defaultType);
+        const symbol = market['symbol'];
+        const name = 'bbo';
+        const messageHash = name + ':' + symbol;
+        const timestamp = this.safeInteger(data, 'time', this.milliseconds());
+        const bbo = {
+            'symbol': symbol,
+            'timestamp': timestamp,
+            'askPrice': this.safeNumber(data, 'ask_price'),
+            'askVolume': this.safeNumber(data, 'ask_amount'),
+            'bidPrice': this.safeNumber(data, 'bid_price'),
+            'bidVolume': this.safeNumber(data, 'bid_amount'),
+        };
+        client.resolve(bbo, messageHash);
+    }
     async watchOHLCV(symbol, timeframe = '1m', since = undefined, limit = undefined, params = {}) {
         /**
          * @method
@@ -996,6 +1044,7 @@ class coinex extends coinex$1 {
             'order.update': this.handleOrders,
             'kline.update': this.handleOHLCV,
             'order.update_stop': this.handleOrders,
+            'bbo.update': this.handleBbo,
         };
         const handler = this.safeValue(handlers, method);
         if (handler !== undefined) {

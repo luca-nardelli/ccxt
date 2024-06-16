@@ -323,6 +323,22 @@ class gate extends gate$1 {
         //
         this.handleTickerAndBidAsk('ticker', client, message);
     }
+    async watchBbo(symbol, params = {}) {
+        const tickers = await this.watchBidsAsks([symbol]);
+        const keys = Object.keys(tickers);
+        const key = keys[0];
+        if (key) {
+            const value = tickers[key];
+            return {
+                'symbol': key,
+                'timestamp': value['info']['t'],
+                'askPrice': value['info']['a'],
+                'askVolume': value['info']['A'],
+                'bidPrice': value['info']['b'],
+                'bidVolume': value['info']['B'],
+            };
+        }
+    }
     async watchBidsAsks(symbols = undefined, params = {}) {
         /**
          * @method

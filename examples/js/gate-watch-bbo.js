@@ -6,7 +6,7 @@ async function example() {
     async function loop(symbol) {
         console.log(`Starting ${symbol}`);
         while (true) {
-            const bbo = await ex.watchBbo([symbol]);
+            const bbo = await ex.watchBbo(symbol);
             console.log(bbo);
         }
     }

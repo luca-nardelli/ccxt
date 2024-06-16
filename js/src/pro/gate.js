@@ -322,14 +322,17 @@ export default class gate extends gateRest {
     }
     async watchBbo(symbol, params = {}) {
         const tickers = await this.watchBidsAsks([symbol]);
-        for (const [symbol, ticker] of Object.entries(tickers)) {
+        const keys = Object.keys(tickers);
+        const key = keys[0];
+        if (key) {
+            const value = tickers[key];
             return {
-                'symbol': symbol,
-                'timestamp': ticker["info"]["t"],
-                'askPrice': ticker["info"]["a"],
-                'askVolume': ticker["info"]["A"],
-                'bidPrice': ticker["info"]["b"],
-                'bidVolume': ticker["info"]["B"],
+                'symbol': key,
+                'timestamp': value['info']['t'],
+                'askPrice': value['info']['a'],
+                'askVolume': value['info']['A'],
+                'bidPrice': value['info']['b'],
+                'bidVolume': value['info']['B'],
             };
         }
     }

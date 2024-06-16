@@ -40,7 +40,7 @@ import {BaseError, ExchangeError, AuthenticationError, PermissionDenied, Account
 //-----------------------------------------------------------------------------
 // this is updated by vss.js when building
 
-const version = '4.3.46';
+const version = '4.3.46001';
 
 (Exchange as any).ccxtVersion = version
 
@@ -537,6 +537,7 @@ export {
     CrossBorrowRates,
     TransferEntries,
     LeverageTiers,
+    Bbo,
     ace,
     alpaca,
     ascendex,
@@ -643,7 +644,7 @@ export {
     xt,
     yobit,
     zaif,
-    zonda,
+    zonda,    
 }
 
 export default ccxt;

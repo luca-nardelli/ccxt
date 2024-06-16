@@ -727,7 +727,8 @@ class bybit extends bybit$1 {
             this.handleDeltas(orderbook['asks'], asks);
             this.handleDeltas(orderbook['bids'], bids);
             orderbook['timestamp'] = timestamp;
-            orderbook['datetime'] = this.iso8601(timestamp);
+            // orderbook['datetime'] = this.iso8601 (timestamp);
+            orderbook['datetime'] = undefined;
         }
         const messageHash = 'orderbook' + ':' + symbol;
         this.orderbooks[symbol] = orderbook;

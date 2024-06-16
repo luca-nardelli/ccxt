@@ -59,14 +59,14 @@ class OrderBook {
         return this.reset(snapshot);
     }
     reset(snapshot = {}) {
-        this.asks.index.fill(Number.MAX_VALUE,0,this.asks.length);
+        this.asks.index.fill(Number.MAX_VALUE, 0, this.asks.length);
         this.asks.length = 0;
         if (snapshot.asks) {
             for (let i = 0; i < snapshot.asks.length; i++) {
                 this.asks.storeArray(snapshot.asks[i]);
             }
         }
-        this.bids.index.fill(Number.MAX_VALUE,0,this.bids.length);
+        this.bids.index.fill(Number.MAX_VALUE, 0, this.bids.length);
         this.bids.length = 0;
         if (snapshot.bids) {
             for (let i = 0; i < snapshot.bids.length; i++) {

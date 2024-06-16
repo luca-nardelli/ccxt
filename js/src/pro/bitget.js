@@ -565,7 +565,13 @@ export default class bitget extends bitgetRest {
             }
         }
         else {
-            const orderbook = this.orderBook({});
+            let orderbook;
+            if (symbol in this.orderbooks) {
+                orderbook = this.orderbooks[symbol];
+            }
+            else {
+                orderbook = this.orderBook({});
+            }
             const parsedOrderbook = this.parseOrderBook(rawOrderBook, symbol, timestamp);
             orderbook.reset(parsedOrderbook);
             this.orderbooks[symbol] = orderbook;

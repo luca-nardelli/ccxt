@@ -601,3 +601,11 @@ export type implicitReturnType = any;
 export type Market = MarketInterface | undefined;
 export type Currency = CurrencyInterface | undefined;
 
+export interface Bbo {
+    symbol: Str;
+    timestamp: Int;
+    askPrice: Num;
+    askVolume: Num;
+    bidPrice: Num;
+    bidVolume: Num;
+}

@@ -581,6 +581,32 @@ class bitget extends bitget$1 {
         }
         client.resolve(this.orderbooks[symbol], messageHash);
     }
+    parseOrderBook(orderbook, symbol, timestamp = undefined, bidsKey = 'bids', asksKey = 'asks', priceKey = 0, amountKey = 1, countOrIdKey = 2) {
+        let bids = [];
+        let asks = [];
+        if('bids' in orderbook){
+            const arr = orderbook['bids'];
+            for(let i = 0; i< arr.length; i++) {
+                bids.push([this.parseNumber(arr[0]),this.parseNumber(arr[1])]);
+            }
+        }
+        if('asks' in orderbook){
+            const arr = orderbook['asks'];
+            for(let i = 0; i< arr.length; i++) {
+                asks.push([this.parseNumber(arr[0]),this.parseNumber(arr[1])]);
+            }
+        }
+        // const bids = this.parseBidsAsks(this.safeValue(orderbook, bidsKey, []), priceKey, amountKey, countOrIdKey);
+        // const asks = this.parseBidsAsks(this.safeValue(orderbook, asksKey, []), priceKey, amountKey, countOrIdKey);
+        return {
+            'symbol': symbol,
+            'bids': this.sortBy(bids, 0, true),
+            'asks': this.sortBy(asks, 0),
+            'timestamp': timestamp,
+            // 'datetime': this.iso8601 (timestamp),
+            'nonce': undefined,
+        };
+    }
     handleDelta(bookside, delta) {
         const bidAsk = this.parseBidAsk(delta, 0, 1);
         // we store the string representations in the orderbook for checksum calculation

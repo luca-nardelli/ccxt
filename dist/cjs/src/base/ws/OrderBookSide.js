@@ -2,14 +2,9 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var generic = require('../functions/generic.js');
+
 /* eslint-disable max-classes-per-file */
-// @ts-nocheck
-// ----------------------------------------------------------------------------
-//
-// Upto 10x faster after initializing memory for the floating point array
-// Author: github.com/frosty00
-// Email: carlo.revelli@berkeley.edu
-//
 /**
  *
  * @param array
@@ -47,6 +42,35 @@ class OrderBookSide extends Array {
         this.length = 0;
         for (let i = 0; i < deltas.length; i++) {
             this.storeArray(deltas[i].slice()); // slice is muy importante
+        }
+    }
+    // Resets the side using a snapshot
+    reset(snapshot) {
+        // Reset index
+        this.index.fill(Number.MAX_VALUE, 0, this.length);
+        this.length = 0;
+        if (snapshot.length === 0) {
+            return;
+        }
+        // Bids = descending
+        snapshot = generic.sortBy(snapshot, 0, this.side);
+        // in the rare case of very large orderbooks being sent
+        if (snapshot.length > this.index.length) {
+            const existing = Array.from(this.index);
+            existing.length = this.length * 2;
+            existing.fill(Number.MAX_VALUE, this.index.length);
+            this.index = new Float64Array(existing);
+        }
+        let lastPrice = null;
+        for (let i = 0; i < snapshot.length; i++) {
+            this.length++;
+            const level = snapshot[i];
+            if (lastPrice === level[0]) {
+                throw new Error('Duplicate price level found in OrderBookSide snapshot');
+            }
+            lastPrice = level[0];
+            this.index[i] = this.side ? -level[0] : level[0];
+            this[i] = level;
         }
     }
     storeArray(delta) {
@@ -101,6 +125,9 @@ class OrderBookSide extends Array {
 class CountedOrderBookSide extends OrderBookSide {
     store(price, size) {
         throw new Error('CountedOrderBookSide.store() is not supported, use storeArray([price, size, count]) instead');
+    }
+    reset(snapshot) {
+        throw new Error('Not implemented');
     }
     storeArray(delta) {
         const price = delta[0];
@@ -163,6 +190,9 @@ class IndexedOrderBookSide extends Array {
             this.length = i;
             this.storeArray(deltas[i].slice()); // slice is muy importante
         }
+    }
+    reset(snapshot) {
+        throw new Error('Not implemented');
     }
     store(price, size) {
         throw new Error('IndexedOrderBook.store() is not supported, use storeArray([price, size, id]) instead');

@@ -4351,7 +4351,7 @@ export default class Exchange {
             'bids': this.sortBy (bids, 0, true),
             'asks': this.sortBy (asks, 0),
             'timestamp': timestamp,
-            'datetime': this.iso8601 (timestamp),
+            // 'datetime': this.iso8601 (timestamp),
             'nonce': undefined,
         } as any;
     }

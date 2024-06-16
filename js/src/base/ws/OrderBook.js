@@ -71,7 +71,7 @@ class OrderBook {
         }
         this.nonce = snapshot.nonce;
         this.timestamp = snapshot.timestamp;
-        this.datetime = iso8601(this.timestamp);
+        // this.datetime = iso8601 (this.timestamp)
         this.symbol = snapshot.symbol;
         return this;
     }

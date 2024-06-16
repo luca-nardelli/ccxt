@@ -59,14 +59,14 @@ class OrderBook {
         return this.reset(snapshot);
     }
     reset(snapshot = {}) {
-        this.asks.index.fill(Number.MAX_VALUE);
+        this.asks.index.fill(Number.MAX_VALUE,0,this.asks.length);
         this.asks.length = 0;
         if (snapshot.asks) {
             for (let i = 0; i < snapshot.asks.length; i++) {
                 this.asks.storeArray(snapshot.asks[i]);
             }
         }
-        this.bids.index.fill(Number.MAX_VALUE);
+        this.bids.index.fill(Number.MAX_VALUE,0,this.bids.length);
         this.bids.length = 0;
         if (snapshot.bids) {
             for (let i = 0; i < snapshot.bids.length; i++) {
@@ -75,7 +75,7 @@ class OrderBook {
         }
         this.nonce = snapshot.nonce;
         this.timestamp = snapshot.timestamp;
-        this.datetime = time.iso8601(this.timestamp);
+        // this.datetime = iso8601 (this.timestamp)
         this.symbol = snapshot.symbol;
         return this;
     }

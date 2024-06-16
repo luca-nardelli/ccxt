@@ -100,20 +100,22 @@ class OrderBook implements CustomOrderBookProp {
     }
 
     reset (snapshot = {}) {
-        this.asks.index.fill (Number.MAX_VALUE, 0, this.asks.length)
-        this.asks.length = 0
-        if (snapshot.asks) {
-            for (let i = 0; i < snapshot.asks.length; i++) {
-                this.asks.storeArray (snapshot.asks[i])
-            }
-        }
-        this.bids.index.fill (Number.MAX_VALUE, 0, this.bids.length)
-        this.bids.length = 0
-        if (snapshot.bids) {
-            for (let i = 0; i < snapshot.bids.length; i++) {
-                this.bids.storeArray (snapshot.bids[i])
-            }
-        }
+        this.asks.reset (snapshot.asks ?? []);
+        this.bids.reset (snapshot.bids ?? []);
+        // this.asks.index.fill (Number.MAX_VALUE, 0, this.asks.length)
+        // this.asks.length = 0
+        // if (snapshot.asks) {
+        //     for (let i = 0; i < snapshot.asks.length; i++) {
+        //         this.asks.storeArray (snapshot.asks[i])
+        //     }
+        // }
+        // this.bids.index.fill (Number.MAX_VALUE, 0, this.bids.length)
+        // this.bids.length = 0
+        // if (snapshot.bids) {
+        //     for (let i = 0; i < snapshot.bids.length; i++) {
+        //         this.bids.storeArray (snapshot.bids[i])
+        //     }
+        // }
         this.nonce = snapshot.nonce
         this.timestamp = snapshot.timestamp
         this.datetime = iso8601 (this.timestamp)

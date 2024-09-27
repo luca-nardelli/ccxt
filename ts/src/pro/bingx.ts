@@ -16,6 +16,7 @@ export default class bingx extends bingxRest {
                 'ws': true,
                 'watchTrades': true,
                 'watchTradesForSymbols': false,
+                'watchBbo': true,
                 'watchOrderBook': true,
                 'watchOrderBookForSymbols': false, // no longer supported
                 'watchOHLCV': true,
@@ -90,18 +91,92 @@ export default class bingx extends bingxRest {
         });
     }
 
-    async watchBbo (symbol: string, params = {}): Promise<Bbo> {
-        const ticker = await this.watchTicker (symbol);
+    async watchBbo (symbol: string): Promise<Bbo> {
+        const ticker = await this.watchBookTicker (symbol);
         if (ticker) {
             return {
                 'symbol': ticker.symbol,
                 'timestamp': ticker.timestamp,
-                'askPrice': ticker.ask,
+                'askPrice': ticker.askPrice,
                 'askVolume': ticker.askVolume,
-                'bidPrice': ticker.bid,
+                'bidPrice': ticker.bidPrice,
                 'bidVolume': ticker.bidVolume,
+                'nonce': ticker.info.u,
             };
         }
+    }
+
+    async watchBookTicker (symbol: string, params = {}) {
+        await this.loadMarkets ();
+        const market = this.market (symbol);
+        const [ marketType, query ] = this.handleMarketTypeAndParams ('watchBbo', market, params);
+        const url = this.safeValue (this.urls['api']['ws'], marketType);
+        if (url === undefined) {
+            throw new BadRequest (this.id + ' watchBbo is not supported for ' + marketType + ' markets.');
+        }
+        const subscriptionHash = market['id'] + '@bookTicker';
+        const messageHash = this.getMessageHash ('bookTicker', market['symbol']);
+        const uuid = this.uuid ();
+        const request: Dict = {
+            'id': uuid,
+            'dataType': subscriptionHash,
+        };
+        if (marketType === 'swap') {
+            request['reqType'] = 'sub';
+        }
+        return await this.watch (url, messageHash, this.extend (request, query), subscriptionHash);
+    }
+
+    handleBookTicker (client: Client, message) {
+        // {
+        //     "code": 0,
+        //     "dataType": "BTC-USDT@bookTicker",
+        //     "data": {
+        //         "e": "bookTicker",
+        //         "u": 1727471514525,
+        //         "E": 1706498923556,
+        //         "T": 1706498883023,
+        //         "s": "BTC-USDT",
+        //         "b": "65787.1",  // Best bid price
+        //         "B": "43691",    // Best bid quantity
+        //         "a": "65793.8",  // Best ask price
+        //         "A": "26691"     // Best ask quantity
+        //     }
+        // }
+        const data = this.safeValue (message, 'data', {});
+        const marketId = this.safeString (data, 's');
+        const isSwap = client.url.indexOf ('swap') >= 0;
+        const marketType = isSwap ? 'swap' : 'spot';
+        const market = this.safeMarket (marketId, undefined, undefined, marketType);
+        const symbol = market['symbol'];
+        const time = marketType === 'swap' ? 'T' : 'E';
+        const bookTicker = {
+            'symbol': symbol,
+            'bidPrice': this.safeString (data, 'b'),  // Best bid price
+            'bidVolume': this.safeString (data, 'B'),  // Best bid quantity
+            'askPrice': this.safeString (data, 'a'),  // Best ask price
+            'askVolume': this.safeString (data, 'A'),  // Best ask quantity
+            'timestamp': this.safeInteger (data, time),  // Transaction time
+            'datetime': this.iso8601 (this.safeInteger (data, time)),  // ISO 8601 formatted time
+            'info': data,  // Raw data for further inspection
+        };
+        const messageHash = this.getMessageHash ('bookTicker', symbol);
+        client.resolve (bookTicker, messageHash);
+    }
+
+    parseWsBookTicker (message, market = undefined) {
+        const timestamp = this.safeInteger (message, 'T');
+        const symbol = market['symbol'];
+        return {
+            'symbol': symbol,
+            'bid': this.safeString (message, 'b'),
+            'bidVolume': this.safeString (message, 'B'),
+            'ask': this.safeString (message, 'a'),
+            'askVolume': this.safeString (message, 'A'),
+            'timestamp': timestamp,
+            'datetime': this.iso8601 (timestamp),
+            'info': message,
+        };
     }
 
     async unWatch (messageHash: string, subMessageHash: string, subscribeHash: string, dataType: string, topic: string, market: Market, methodName: string, params = {}): Promise<any> {
@@ -1516,6 +1591,10 @@ export default class bingx extends bingxRest {
         }
         if (dataType.indexOf ('@kline') >= 0) {
             this.handleOHLCV (client, message);
+            return;
+        }
+        if (dataType.indexOf ('@bookTicker') >= 0) {
+            this.handleBookTicker (client, message);
             return;
         }
         if (dataType.indexOf ('executionReport') >= 0) {

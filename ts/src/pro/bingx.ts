@@ -4,7 +4,7 @@
 import bingxRest from '../bingx.js';
 import { BadRequest, NetworkError, NotSupported, ArgumentsRequired } from '../base/errors.js';
 import { ArrayCache, ArrayCacheByTimestamp, ArrayCacheBySymbolById } from '../base/ws/Cache.js';
-import type { Int, OHLCV, Str, Strings, OrderBook, Order, Trade, Balances, Ticker, Tickers, Dict } from '../base/types.js';
+import type { Int, OHLCV, Str, Strings, OrderBook, Order, Trade, Balances, Ticker, Tickers, Dict, Bbo } from '../base/types.js';
 import Client from '../base/ws/Client.js';
 import { Precise } from '../base/Precise.js';
 
@@ -86,6 +86,20 @@ export default class bingx extends bingxRest {
                 'keepAlive': 1800000, // 30 minutes
             },
         });
+    }
+    
+    async watchBbo (symbol: string, params = {}): Promise<Bbo> {
+        const ticker = await this.watchTicker (symbol);
+        if (ticker) {
+            return {
+                'symbol': ticker.symbol,
+                'timestamp': ticker.timestamp,
+                'askPrice': ticker.ask,
+                'askVolume': ticker.askVolume,
+                'bidPrice': ticker.bid,
+                'bidVolume': ticker.bidVolume,
+            };
+        }
     }
 
     async watchTicker (symbol: string, params = {}): Promise<Ticker> {
@@ -760,6 +774,7 @@ export default class bingx extends bingxRest {
             const limit = this.safeInteger (subscription, 'limit');
             this.orderbooks[symbol] = this.orderBook ({}, limit);
         }
+        console.log("TTTTTTT", message)
         const orderbook = this.orderbooks[symbol];
         let snapshot = undefined;
         if (market['inverse']) {

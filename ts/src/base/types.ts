@@ -608,4 +608,5 @@ export interface Bbo {
     askVolume: Num;
     bidPrice: Num;
     bidVolume: Num;
+    nonce?: Num
 }

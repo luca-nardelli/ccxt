@@ -4,7 +4,7 @@
 import bingxRest from '../bingx.js';
 import { BadRequest, NetworkError, NotSupported } from '../base/errors.js';
 import { ArrayCache, ArrayCacheByTimestamp, ArrayCacheBySymbolById } from '../base/ws/Cache.js';
-import type { Int, Market, OHLCV, Str, OrderBook, Order, Trade, Balances, Ticker, Dict } from '../base/types.js';
+import type { Int, Market, OHLCV, Str, OrderBook, Order, Trade, Balances, Ticker, Dict, Bbo } from '../base/types.js';
 import Client from '../base/ws/Client.js';
 
 //  ---------------------------------------------------------------------------
@@ -88,6 +88,20 @@ export default class bingx extends bingxRest {
                 'keepAlive': 1800000, // 30 minutes
             },
         });
+    }
+
+    async watchBbo (symbol: string, params = {}): Promise<Bbo> {
+        const ticker = await this.watchTicker (symbol);
+        if (ticker) {
+            return {
+                'symbol': ticker.symbol,
+                'timestamp': ticker.timestamp,
+                'askPrice': ticker.ask,
+                'askVolume': ticker.askVolume,
+                'bidPrice': ticker.bid,
+                'bidVolume': ticker.bidVolume,
+            };
+        }
     }
 
     async unWatch (messageHash: string, subMessageHash: string, subscribeHash: string, dataType: string, topic: string, market: Market, methodName: string, params = {}): Promise<any> {

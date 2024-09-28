@@ -1,5 +1,5 @@
 import gateRest from '../gate.js';
-import type { Int, Str, Strings, OrderBook, Order, Trade, Ticker, Tickers, OHLCV, Position, Balances, Dict, Liquidation, OrderType, OrderSide, Num, Market, MarketType, OrderRequest } from '../base/types.js';
+import type { Int, Str, Strings, OrderBook, Order, Trade, Ticker, Tickers, OHLCV, Position, Balances, Dict, Liquidation, OrderType, OrderSide, Num, Market, MarketType, OrderRequest, Bbo } from '../base/types.js';
 import Client from '../base/ws/Client.js';
 export default class gate extends gateRest {
     describe(): any;
@@ -22,6 +22,7 @@ export default class gate extends gateRest {
     watchTicker(symbol: string, params?: {}): Promise<Ticker>;
     watchTickers(symbols?: Strings, params?: {}): Promise<Tickers>;
     handleTicker(client: Client, message: any): void;
+    watchBbo(symbol: string, params?: {}): Promise<Bbo>;
     watchBidsAsks(symbols?: Strings, params?: {}): Promise<Tickers>;
     handleBidAsk(client: Client, message: any): void;
     subscribeWatchTickersAndBidsAsks(symbols?: Strings, callerMethodName?: Str, params?: {}): Promise<Tickers>;

@@ -120,6 +120,8 @@ export default class Client {
             future.reject (this.rejections[messageHash])
             delete this.rejections[messageHash]
             delete this.messageQueue[messageHash]
+            // Not sure this is needed anymore
+            // delete this.futures[messageHash] // Cleanup future to prevent multiple rejections of the same future
             return future;
         }
         if (this.useMessageQueue) {

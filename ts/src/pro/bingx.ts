@@ -88,7 +88,7 @@ export default class bingx extends bingxRest {
             },
         });
     }
-    
+
     async watchBbo (symbol: string): Promise<Bbo> {
         const ticker = await this.watchBookTicker (symbol);
         if (ticker) {
@@ -103,29 +103,29 @@ export default class bingx extends bingxRest {
             };
         }
     }
-    
-    async watchBookTicker(symbol: string, params = {}) {
-        await this.loadMarkets();
-        const market = this.market(symbol);
-        const [marketType, query] = this.handleMarketTypeAndParams('watchBbo', market, params);
-        const url = this.safeValue(this.urls['api']['ws'], marketType);
+
+    async watchBookTicker (symbol: string, params = {}) {
+        await this.loadMarkets ();
+        const market = this.market (symbol);
+        const [ marketType, query ] = this.handleMarketTypeAndParams ('watchBbo', market, params);
+        const url = this.safeValue (this.urls['api']['ws'], marketType);
         if (url === undefined) {
-            throw new BadRequest(this.id + ' watchBbo is not supported for ' + marketType + ' markets.');
+            throw new BadRequest (this.id + ' watchBbo is not supported for ' + marketType + ' markets.');
         }
         const subscriptionHash = market['id'] + '@bookTicker';
-        const messageHash = this.getMessageHash('bookTicker', market['symbol']);
-        const uuid = this.uuid();
+        const messageHash = this.getMessageHash ('bookTicker', market['symbol']);
+        const uuid = this.uuid ();
         const request: Dict = {
             'id': uuid,
             'dataType': subscriptionHash,
         };
         if (marketType === 'swap') {
             request['reqType'] = 'sub';
-        };
-        return await this.watch(url, messageHash, this.extend(request, query), subscriptionHash);
+        }
+        return await this.watch (url, messageHash, this.extend (request, query), subscriptionHash);
     }
-    
-    handleBookTicker(client: Client, message) {
+
+    handleBookTicker (client: Client, message) {
         // {
         //     "code": 0,
         //     "dataType": "BTC-USDT@bookTicker",
@@ -141,47 +141,41 @@ export default class bingx extends bingxRest {
         //         "A": "26691"     // Best ask quantity
         //     }
         // }
-        const data = this.safeValue(message, 'data', {});
+        const data = this.safeValue (message, 'data', {});
         const marketId = this.safeString (data, 's');
         const isSwap = client.url.indexOf ('swap') >= 0;
         const marketType = isSwap ? 'swap' : 'spot';
-        const market = this.safeMarket(marketId, undefined, undefined, marketType);
+        const market = this.safeMarket (marketId, undefined, undefined, marketType);
         const symbol = market['symbol'];
-        const time = marketType==='swap' ? 'T' : 'E'
-        
+        const time = marketType === 'swap' ? 'T' : 'E';
         const bookTicker = {
             'symbol': symbol,
-            'bidPrice': this.safeString(data, 'b'),  // Best bid price
-            'bidVolume': this.safeString(data, 'B'),  // Best bid quantity
-            'askPrice': this.safeString(data, 'a'),  // Best ask price
-            'askVolume': this.safeString(data, 'A'),  // Best ask quantity
-            'timestamp': this.safeInteger(data, time),  // Transaction time
-            'datetime': this.iso8601(this.safeInteger(data, time)),  // ISO 8601 formatted time
+            'bidPrice': this.safeString (data, 'b'),  // Best bid price
+            'bidVolume': this.safeString (data, 'B'),  // Best bid quantity
+            'askPrice': this.safeString (data, 'a'),  // Best ask price
+            'askVolume': this.safeString (data, 'A'),  // Best ask quantity
+            'timestamp': this.safeInteger (data, time),  // Transaction time
+            'datetime': this.iso8601 (this.safeInteger (data, time)),  // ISO 8601 formatted time
             'info': data,  // Raw data for further inspection
         };
-        const messageHash = this.getMessageHash('bookTicker', symbol);
-        client.resolve(bookTicker, messageHash);
+        const messageHash = this.getMessageHash ('bookTicker', symbol);
+        client.resolve (bookTicker, messageHash);
     }
-    
-    parseWsBookTicker(message, market = undefined) {
-        const timestamp = this.safeInteger(message, 'T');
+
+    parseWsBookTicker (message, market = undefined) {
+        const timestamp = this.safeInteger (message, 'T');
         const symbol = market['symbol'];
         return {
             'symbol': symbol,
-            'bid': this.safeString(message, 'b'),
-            'bidVolume': this.safeString(message, 'B'),
-            'ask': this.safeString(message, 'a'),
-            'askVolume': this.safeString(message, 'A'),
+            'bid': this.safeString (message, 'b'),
+            'bidVolume': this.safeString (message, 'B'),
+            'ask': this.safeString (message, 'a'),
+            'askVolume': this.safeString (message, 'A'),
             'timestamp': timestamp,
-            'datetime': this.iso8601(timestamp),
+            'datetime': this.iso8601 (timestamp),
             'info': message,
         };
     }
-    
-    
-    
-    
-    
 
     async watchTicker (symbol: string, params = {}): Promise<Ticker> {
         /**
@@ -855,7 +849,6 @@ export default class bingx extends bingxRest {
             const limit = this.safeInteger (subscription, 'limit');
             this.orderbooks[symbol] = this.orderBook ({}, limit);
         }
-        console.log("TTTTTTT", message)
         const orderbook = this.orderbooks[symbol];
         let snapshot = undefined;
         if (market['inverse']) {
@@ -1626,7 +1619,6 @@ export default class bingx extends bingxRest {
             this.handleBookTicker (client, message);
             return;
         }
-        
         if (dataType.indexOf ('executionReport') >= 0) {
             const data = this.safeValue (message, 'data', {});
             const type = this.safeString (data, 'x');

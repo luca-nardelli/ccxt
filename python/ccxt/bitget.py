@@ -7,7 +7,7 @@ from ccxt.base.exchange import Exchange
 from ccxt.abstract.bitget import ImplicitAPI
 import hashlib
 import json
-from ccxt.base.types import Balances, Conversion, CrossBorrowRate, Currencies, Currency, FundingHistory, Int, IsolatedBorrowRate, LedgerEntry, Leverage, LeverageTier, Liquidation, MarginMode, MarginModification, Market, Num, Order, OrderBook, OrderRequest, OrderSide, OrderType, Position, Str, Strings, Ticker, Tickers, Trade, TradingFeeInterface, TradingFees, Transaction, TransferEntry
+from ccxt.base.types import Balances, Conversion, CrossBorrowRate, Currencies, Currency, FundingHistory, IndexType, Int, IsolatedBorrowRate, LedgerEntry, Leverage, LeverageTier, Liquidation, MarginMode, MarginModification, Market, Num, Order, OrderBook, OrderRequest, OrderSide, OrderType, Position, Str, Strings, Ticker, Tickers, Trade, TradingFeeInterface, TradingFees, Transaction, TransferEntry
 from typing import List
 from ccxt.base.errors import ExchangeError
 from ccxt.base.errors import AuthenticationError
@@ -2416,6 +2416,16 @@ class bitget(Exchange, ImplicitAPI):
             'network': network,
             'info': depositAddress,
         }
+
+    def parse_bid_ask(self, bidask, priceKey: IndexType = 0, amountKey: IndexType = 1, countOrIdKey: IndexType = 2):
+        # bidask: [number, number] | [number, number, number]
+        # Specialized and faster version of parseBidsAsks for bitget, overrides base implementation
+        price = self.parse_number(bidask[priceKey])
+        amount = self.parse_number(bidask[amountKey])
+        if len(bidask) > 2:
+            countOrId = asInteger(self.parse_number(bidask[countOrIdKey]))
+            return [price, amount, countOrId]
+        return [price, amount]
 
     def fetch_order_book(self, symbol: str, limit: Int = None, params={}) -> OrderBook:
         """

@@ -82,6 +82,48 @@ class woo extends woo$1 {
         const request = this.extend(subscribe, message);
         return await this.watch(url, messageHash, request, messageHash, subscribe);
     }
+    async watchBbo(symbol, limit = undefined, params = {}) {
+        await this.loadMarkets();
+        const name = 'bbo';
+        const market = this.market(symbol);
+        const topic = market['id'] + '@' + name;
+        const request = {
+            'event': 'subscribe',
+            'topic': topic,
+        };
+        const message = this.extend(request, params);
+        const bbo = await this.watchPublic(topic, message);
+        return bbo;
+    }
+    handleBbo(client, message) {
+        // @see https://docs.woo.org/#bbo
+        // {
+        //   "topic": "SPOT_WOO_USDT@bbo",
+        //   "ts": 1614152296945,
+        //   "data": {
+        //     "symbol": "SPOT_WOO_USDT",
+        //     "ask": 0.30939,
+        //     "askSize": 4508.53,
+        //     "bid": 0.30776,
+        //     "bidSize": 25246.14
+        //   }
+        // }
+        const data = this.safeValue(message, 'data');
+        const marketId = this.safeString(data, 'symbol');
+        const market = this.safeMarket(marketId);
+        const symbol = market['symbol'];
+        const topic = this.safeString(message, 'topic');
+        const timestamp = this.safeInteger(message, 'ts', this.milliseconds());
+        const bbo = {
+            'symbol': symbol,
+            'timestamp': timestamp,
+            'askPrice': this.safeNumber(data, 'ask'),
+            'askVolume': this.safeNumber(data, 'askSize'),
+            'bidPrice': this.safeNumber(data, 'bid'),
+            'bidVolume': this.safeNumber(data, 'bidSize'),
+        };
+        client.resolve(bbo, topic);
+    }
     async watchOrderBook(symbol, limit = undefined, params = {}) {
         /**
          * @method
@@ -1076,7 +1118,13 @@ class woo extends woo$1 {
             'topic': topic,
         };
         const message = this.extend(request, params);
-        return await this.watchPrivate(messageHash, message);
+        await this.watchPrivate(messageHash, message);
+        // The returned balance in the ws message only contains the "total" amount
+        // So we work around the issue by re-fetching it via REST
+        const parsedBalances = await this.fetchBalance();
+        this.balance = this.safeBalance(parsedBalances);
+        // @ts-ignore
+        return this.balance;
     }
     handleBalance(client, message) {
         //
@@ -1181,6 +1229,7 @@ class woo extends woo$1 {
             'trade': this.handleTrade,
             'balance': this.handleBalance,
             'position': this.handlePositions,
+            'bbo': this.handleBbo,
         };
         const event = this.safeString(message, 'event');
         let method = this.safeValue(methods, event);

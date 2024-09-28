@@ -3622,7 +3622,7 @@ class Exchange {
             'bids': this.sortBy(bids, 0, true),
             'asks': this.sortBy(asks, 0),
             'timestamp': timestamp,
-            'datetime': this.iso8601(timestamp),
+            // 'datetime': this.iso8601 (timestamp),
             'nonce': undefined,
         };
     }
@@ -4097,10 +4097,6 @@ class Exchange {
         });
     }
     safeMarket(marketId, market = undefined, delimiter = undefined, marketType = undefined) {
-        const result = this.safeMarketStructure({
-            'symbol': marketId,
-            'marketId': marketId,
-        });
         if (marketId !== undefined) {
             if ((this.markets_by_id !== undefined) && (marketId in this.markets_by_id)) {
                 const markets = this.markets_by_id[marketId];
@@ -4126,6 +4122,10 @@ class Exchange {
                 }
             }
             else if (delimiter !== undefined && delimiter !== '') {
+                const result = this.safeMarketStructure({
+                    'symbol': marketId,
+                    'marketId': marketId,
+                });
                 const parts = marketId.split(delimiter);
                 const partsLength = parts.length;
                 if (partsLength === 2) {
@@ -4144,7 +4144,10 @@ class Exchange {
         if (market !== undefined) {
             return market;
         }
-        return result;
+        return this.safeMarketStructure({
+            'symbol': marketId,
+            'marketId': marketId,
+        });
     }
     checkRequiredCredentials(error = true) {
         /**

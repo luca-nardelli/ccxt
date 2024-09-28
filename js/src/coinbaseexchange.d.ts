@@ -46,7 +46,7 @@ export default class coinbaseexchange extends Exchange {
     fetchDepositsWithdrawals(code?: Str, since?: Int, limit?: Int, params?: {}): Promise<Transaction[]>;
     fetchDeposits(code?: Str, since?: Int, limit?: Int, params?: {}): Promise<Transaction[]>;
     fetchWithdrawals(code?: Str, since?: Int, limit?: Int, params?: {}): Promise<Transaction[]>;
-    parseTransactionStatus(transaction: any): "ok" | "canceled" | "pending" | "failed";
+    parseTransactionStatus(transaction: any): "ok" | "pending" | "failed" | "canceled";
     parseTransaction(transaction: Dict, currency?: Currency): Transaction;
     createDepositAddress(code: string, params?: {}): Promise<{
         currency: string;

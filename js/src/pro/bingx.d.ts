@@ -1,8 +1,21 @@
 import bingxRest from '../bingx.js';
-import type { Int, OHLCV, Str, Strings, OrderBook, Order, Trade, Balances, Ticker, Tickers } from '../base/types.js';
+import type { Int, OHLCV, Str, Strings, OrderBook, Order, Trade, Balances, Ticker, Tickers, Bbo } from '../base/types.js';
 import Client from '../base/ws/Client.js';
 export default class bingx extends bingxRest {
     describe(): any;
+    watchBbo(symbol: string): Promise<Bbo>;
+    watchBookTicker(symbol: string, params?: {}): Promise<any>;
+    handleBookTicker(client: Client, message: any): void;
+    parseWsBookTicker(message: any, market?: any): {
+        symbol: any;
+        bid: string;
+        bidVolume: string;
+        ask: string;
+        askVolume: string;
+        timestamp: number;
+        datetime: string;
+        info: any;
+    };
     watchTicker(symbol: string, params?: {}): Promise<Ticker>;
     handleTicker(client: Client, message: any): void;
     parseWsTicker(message: any, market?: any): Ticker;

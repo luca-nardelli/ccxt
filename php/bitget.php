@@ -2459,6 +2459,18 @@ class bitget extends Exchange {
         );
     }
 
+    public function parse_bid_ask($bidask, int|string $priceKey = 0, int|string $amountKey = 1, int|string $countOrIdKey = 2) {
+        // $bidask => [number, number] | [number, number, number]
+        // Specialized and faster version of parseBidsAsks for bitget, overrides base implementation
+        $price = $this->parse_number($bidask[$priceKey]);
+        $amount = $this->parse_number($bidask[$amountKey]);
+        if (strlen($bidask) > 2) {
+            $countOrId = asInteger ($this->parse_number($bidask[$countOrIdKey]));
+            return array( $price, $amount, $countOrId );
+        }
+        return array( $price, $amount );
+    }
+
     public function fetch_order_book(string $symbol, ?int $limit = null, $params = array ()): array {
         /**
          * fetches information on open orders with bid (buy) and ask (sell) prices, volumes and other $data

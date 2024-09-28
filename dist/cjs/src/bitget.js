@@ -2,6 +2,7 @@
 
 var bitget$1 = require('./abstract/bitget.js');
 var errors = require('./base/errors.js');
+var type = require('./base/functions/type.js');
 var Precise = require('./base/Precise.js');
 var number = require('./base/functions/number.js');
 var sha256 = require('./static_dependencies/noble-hashes/sha256.js');
@@ -2478,6 +2479,17 @@ class bitget extends bitget$1 {
             'network': network,
             'info': depositAddress,
         };
+    }
+    parseBidAsk(bidask, priceKey = 0, amountKey = 1, countOrIdKey = 2) {
+        // bidask: [number, number] | [number, number, number]
+        // Specialized and faster version of parseBidsAsks for bitget, overrides base implementation
+        const price = this.parseNumber(bidask[priceKey]);
+        const amount = this.parseNumber(bidask[amountKey]);
+        if (bidask.length > 2) {
+            const countOrId = type.asInteger(this.parseNumber(bidask[countOrIdKey]));
+            return [price, amount, countOrId];
+        }
+        return [price, amount];
     }
     async fetchOrderBook(symbol, limit = undefined, params = {}) {
         /**

@@ -107,11 +107,17 @@ export default class bingx extends bingxRest {
     async watchBookTicker (symbol: string, params = {}) {
         await this.loadMarkets ();
         const market = this.market (symbol);
-        const [ marketType, query ] = this.handleMarketTypeAndParams ('watchBbo', market, params);
-        const url = this.safeValue (this.urls['api']['ws'], marketType);
-        if (url === undefined) {
-            throw new BadRequest (this.id + ' watchBbo is not supported for ' + marketType + ' markets.');
+        let marketType = undefined;
+        let subType = undefined;
+        let url = undefined;
+        [ marketType, params ] = this.handleMarketTypeAndParams ('watchBbo', market, params);
+        [ subType, params ] = this.handleSubTypeAndParams ('watchBbo', market, params, 'linear');
+        if (marketType === 'swap') {
+            url = this.safeString (this.urls['api']['ws'], subType);
+        } else {
+            url = this.safeString (this.urls['api']['ws'], marketType);
         }
+
         const subscriptionHash = market['id'] + '@bookTicker';
         const messageHash = this.getMessageHash ('bookTicker', market['symbol']);
         const uuid = this.uuid ();
@@ -122,7 +128,7 @@ export default class bingx extends bingxRest {
         if (marketType === 'swap') {
             request['reqType'] = 'sub';
         }
-        return await this.watch (url, messageHash, this.extend (request, query), subscriptionHash);
+        return await this.watch (url, messageHash, this.extend (request, params), subscriptionHash);
     }
 
     handleBookTicker (client: Client, message) {

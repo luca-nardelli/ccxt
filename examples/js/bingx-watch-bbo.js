@@ -4,7 +4,7 @@ async function example() {
     const ex = new ccxt.pro.bingx({options: {
         defaultType: 'swap',
     }});
-    const symbols = ['BTC/USDT'];
+    const symbols = ['BTC/USDT:USDT'];
     async function loop(symbol) {
         console.log(`Starting ${symbol}`);
         while (true) {

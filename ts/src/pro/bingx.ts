@@ -95,10 +95,10 @@ export default class bingx extends bingxRest {
             return {
                 'symbol': ticker.symbol,
                 'timestamp': ticker.timestamp,
-                'askPrice': ticker.askPrice,
-                'askVolume': ticker.askVolume,
-                'bidPrice': ticker.bidPrice,
-                'bidVolume': ticker.bidVolume,
+                'askPrice': ticker.askPrice ? parseFloat (ticker.askPrice) : undefined,
+                'askVolume': ticker.askVolume ? parseFloat (ticker.askVolume) : undefined,
+                'bidPrice': ticker.bidPrice ? parseFloat (ticker.bidPrice) : undefined,
+                'bidVolume': ticker.bidVolume ? parseFloat (ticker.bidVolume) : undefined,
                 'nonce': ticker.info.u,
             };
         }

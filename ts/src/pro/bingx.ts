@@ -117,7 +117,6 @@ export default class bingx extends bingxRest {
         } else {
             url = this.safeString (this.urls['api']['ws'], marketType);
         }
-
         const subscriptionHash = market['id'] + '@bookTicker';
         const messageHash = this.getMessageHash ('bookTicker', market['symbol']);
         const uuid = this.uuid ();

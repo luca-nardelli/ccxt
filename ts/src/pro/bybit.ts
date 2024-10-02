@@ -151,6 +151,8 @@ export default class bybit extends bybitRest {
         });
     }
 
+    isWatchingBidsAsks: boolean = false;
+
     requestId () {
         const requestId = this.sum (this.safeInteger (this.options, 'requestId', 0), 1);
         this.options['requestId'] = requestId;
@@ -598,6 +600,7 @@ export default class bybit extends bybitRest {
          * @param {object} [params] extra parameters specific to the exchange API endpoint
          * @returns {object} a [ticker structure]{@link https://docs.ccxt.com/#/?id=ticker-structure}
          */
+        this.isWatchingBidsAsks = true;
         await this.loadMarkets ();
         symbols = this.marketSymbols (symbols, undefined, false);
         const messageHashes = [];
@@ -980,10 +983,15 @@ export default class bybit extends bybitRest {
         const symbol = market['symbol'];
         const timestamp = this.safeInteger (message, 'ts');
         if (!(symbol in this.orderbooks)) {
-            this.orderbooks[symbol] = this.orderBook ();
+            this.orderbooks[symbol] = this.orderBook({}, this.parseNumber(limit));
         }
         const orderbook = this.orderbooks[symbol];
         if (isSnapshot) {
+            // Reset book if depth of snapshot is higher than actual one, so that we can adapt to the new depth
+            const depth = this.parseNumber(limit);
+            if(depth > orderbook.depth) {
+                this.orderbooks[symbol] = this.orderBook({}, depth);
+            }
             const snapshot = this.parseOrderBook (data, symbol, timestamp, 'b', 'a');
             orderbook.reset (snapshot);
         } else {
@@ -998,7 +1006,7 @@ export default class bybit extends bybitRest {
         const messageHash = 'orderbook' + ':' + symbol;
         this.orderbooks[symbol] = orderbook;
         client.resolve (orderbook, messageHash);
-        if (limit === '1') {
+        if (limit === '1' && this.isWatchingBidsAsks) {
             const bidask = this.parseWsBidAsk (this.orderbooks[symbol], market);
             const newBidsAsks: Dict = {};
             newBidsAsks[symbol] = bidask;

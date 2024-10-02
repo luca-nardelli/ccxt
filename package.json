@@ -42,6 +42,7 @@
     "tsBuildFile": "tsc --skipLibCheck --strictNullChecks false --strict --noImplicitAny false --esModuleInterop --isolatedModules false --forceConsistentCasingInFileNames --removeComments false --target ES2020 --declaration --allowJs --checkJs false --moduleResolution Node --module ES2022 --outDir ./js/src --lib ES2020.BigInt --lib dom ",
     "tsBuild": "tsc || echo \"\"",
     "tsBuildExamples": "tsc -p ./examples/tsconfig.json",
+    "tsBuildBenchmarks": "tsc -p ./benchmarks/tsconfig.json",
     "emitAPI": "node build/generateImplicitAPI.js",
     "build": "npm run pre-transpile && npm run transpile && npm run post-transpile && npm run update-badges && npm run build-docs",
     "force-build-slow": "npm run pre-transpile && npm run force-transpile && npm run post-transpile && npm run update-badges",
@@ -179,6 +180,7 @@
     "rollup-plugin-execute": "1.1.1",
     "terser-webpack-plugin": "^5.3.9",
     "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.2",
     "tsx": "^4.7.2",
     "typescript": "4.7.4",
     "webpack": "^5.76.2",
@@ -280,6 +282,7 @@
   },
   "ethereum": "0x26a3CB49578F07000575405a57888681249c35Fd",
   "dependencies": {
+    "tinybench": "^2.9.0",
     "ws": "^8.8.1"
   }
 }

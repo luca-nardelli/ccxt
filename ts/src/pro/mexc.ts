@@ -893,7 +893,8 @@ export default class mexc extends mexcRest {
             this.handleDelta (storedOrderBook, data);
             const timestamp = this.safeIntegerN (message, [ 't', 'ts', 'sendTime' ]);
             storedOrderBook['timestamp'] = timestamp;
-            storedOrderBook['datetime'] = this.iso8601 (timestamp);
+            // storedOrderBook['datetime'] = this.iso8601 (timestamp);
+            storedOrderBook['datetime'] = undefined;
         } catch (e) {
             delete client.subscriptions[messageHash];
             client.reject (e, messageHash);

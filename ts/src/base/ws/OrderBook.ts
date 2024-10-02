@@ -42,6 +42,8 @@ class OrderBook implements CustomOrderBookProp {
 
     symbol: Str;
 
+    depth: Int;
+
     constructor (snapshot = {}, depth = undefined) {
 
         Object.defineProperty (this, 'cache', {
@@ -79,6 +81,7 @@ class OrderBook implements CustomOrderBookProp {
         if (this.timestamp) {
             this.datetime = iso8601 (this.timestamp)
         }
+        this.depth = depth;
     }
 
     limit () {

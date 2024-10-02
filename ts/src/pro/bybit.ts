@@ -980,10 +980,15 @@ export default class bybit extends bybitRest {
         const symbol = market['symbol'];
         const timestamp = this.safeInteger (message, 'ts');
         if (!(symbol in this.orderbooks)) {
-            this.orderbooks[symbol] = this.orderBook ();
+            this.orderbooks[symbol] = this.orderBook({}, this.parseNumber(limit));
         }
         const orderbook = this.orderbooks[symbol];
         if (isSnapshot) {
+            // Reset book if depth of snapshot is higher than actual one, so that we can adapt to the new depth
+            const depth = this.parseNumber(limit);
+            if(depth > orderbook.depth) {
+                this.orderbooks[symbol] = this.orderBook({}, depth);
+            }
             const snapshot = this.parseOrderBook (data, symbol, timestamp, 'b', 'a');
             orderbook.reset (snapshot);
         } else {

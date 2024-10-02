@@ -37,6 +37,7 @@ class OrderBook {
         if (this.timestamp) {
             this.datetime = iso8601(this.timestamp);
         }
+        this.depth = depth;
     }
     limit() {
         this.asks.limit();

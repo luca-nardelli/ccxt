@@ -88,10 +88,10 @@ export default class bingx extends bingxRest {
             return {
                 'symbol': ticker.symbol,
                 'timestamp': ticker.timestamp,
-                'askPrice': ticker.askPrice,
-                'askVolume': ticker.askVolume,
-                'bidPrice': ticker.bidPrice,
-                'bidVolume': ticker.bidVolume,
+                'askPrice': ticker.askPrice ? parseFloat(ticker.askPrice) : undefined,
+                'askVolume': ticker.askVolume ? parseFloat(ticker.askVolume) : undefined,
+                'bidPrice': ticker.bidPrice ? parseFloat(ticker.bidPrice) : undefined,
+                'bidVolume': ticker.bidVolume ? parseFloat(ticker.bidVolume) : undefined,
                 'nonce': ticker.info.u,
             };
         }
@@ -99,10 +99,16 @@ export default class bingx extends bingxRest {
     async watchBookTicker(symbol, params = {}) {
         await this.loadMarkets();
         const market = this.market(symbol);
-        const [marketType, query] = this.handleMarketTypeAndParams('watchBbo', market, params);
-        const url = this.safeValue(this.urls['api']['ws'], marketType);
-        if (url === undefined) {
-            throw new BadRequest(this.id + ' watchBbo is not supported for ' + marketType + ' markets.');
+        let marketType = undefined;
+        let subType = undefined;
+        let url = undefined;
+        [marketType, params] = this.handleMarketTypeAndParams('watchBbo', market, params);
+        [subType, params] = this.handleSubTypeAndParams('watchBbo', market, params, 'linear');
+        if (marketType === 'swap') {
+            url = this.safeString(this.urls['api']['ws'], subType);
+        }
+        else {
+            url = this.safeString(this.urls['api']['ws'], marketType);
         }
         const subscriptionHash = market['id'] + '@bookTicker';
         const messageHash = this.getMessageHash('bookTicker', market['symbol']);
@@ -114,7 +120,7 @@ export default class bingx extends bingxRest {
         if (marketType === 'swap') {
             request['reqType'] = 'sub';
         }
-        return await this.watch(url, messageHash, this.extend(request, query), subscriptionHash);
+        return await this.watch(url, messageHash, this.extend(request, params), subscriptionHash);
     }
     handleBookTicker(client, message) {
         // {

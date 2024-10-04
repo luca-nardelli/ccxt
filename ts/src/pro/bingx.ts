@@ -160,7 +160,13 @@ export default class bingx extends bingxRest {
             'askPrice': this.safeString (data, 'a'),  // Best ask price
             'askVolume': this.safeString (data, 'A'),  // Best ask quantity
             'timestamp': this.safeInteger (data, time),  // Transaction time
-            'datetime': this.iso8601 (this.safeInteger (data, time)),  // ISO 8601 formatted time
+            // 'bidPrice': data['b'],  // Best bid price
+            // 'bidVolume': data['B'],  // Best bid quantity
+            // 'askPrice': data['a'],  // Best ask price
+            // 'askVolume': data['A'],  // Best ask quantity
+            // 'timestamp': time,  // Transaction time
+            // 'datetime': this.iso8601 (this.safeInteger (data, time)),  // ISO 8601 formatted time
+            'datetime': undefined,
             'info': data,  // Raw data for further inspection
         };
         const messageHash = this.getMessageHash ('bookTicker', symbol);

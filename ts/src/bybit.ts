@@ -2326,7 +2326,7 @@ export default class bybit extends Exchange {
         return this.safeTicker ({
             'symbol': symbol,
             'timestamp': timestamp,
-            'datetime': this.iso8601 (timestamp),
+            // 'datetime': this.iso8601 (timestamp),
             'high': high,
             'low': low,
             'bid': bid,

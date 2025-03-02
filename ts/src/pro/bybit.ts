@@ -604,7 +604,7 @@ export default class bybit extends bybitRest {
         }
         const timestamp = this.safeInteger (message, 'ts');
         parsed['timestamp'] = timestamp;
-        parsed['datetime'] = this.iso8601 (timestamp);
+        // parsed['datetime'] = this.iso8601 (timestamp);
         this.tickers[symbol] = parsed;
         const messageHash = 'ticker:' + symbol;
         client.resolve (this.tickers[symbol], messageHash);

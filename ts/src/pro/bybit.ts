@@ -1,12 +1,12 @@
 
 //  ---------------------------------------------------------------------------
 
-import bybitRest from '../bybit.js';
-import { ArgumentsRequired, AuthenticationError, ExchangeError, BadRequest } from '../base/errors.js';
+import { ArgumentsRequired, AuthenticationError, BadRequest, ExchangeError } from '../base/errors.js';
+import type { Balances, Dict, Int, Liquidation, Num, OHLCV, Order, OrderBook, OrderSide, OrderType, Position, Str, Strings, Ticker, Tickers, Trade } from '../base/types.js';
 import { ArrayCache, ArrayCacheBySymbolById, ArrayCacheBySymbolBySide, ArrayCacheByTimestamp } from '../base/ws/Cache.js';
-import { sha256 } from '../static_dependencies/noble-hashes/sha256.js';
-import type { Int, OHLCV, Str, Strings, Ticker, OrderBook, Order, Trade, Tickers, Position, Balances, OrderType, OrderSide, Num, Dict, Liquidation } from '../base/types.js';
 import Client from '../base/ws/Client.js';
+import bybitRest from '../bybit.js';
+import { sha256 } from '../static_dependencies/noble-hashes/sha256.js';
 
 //  ---------------------------------------------------------------------------
 
@@ -588,7 +588,7 @@ export default class bybit extends bybitRest {
         }
         const timestamp = this.safeInteger (message, 'ts');
         parsed['timestamp'] = timestamp;
-        parsed['datetime'] = this.iso8601 (timestamp);
+        // parsed['datetime'] = this.iso8601 (timestamp);
         this.tickers[symbol] = parsed;
         const messageHash = 'ticker:' + symbol;
         client.resolve (this.tickers[symbol], messageHash);

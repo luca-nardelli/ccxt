@@ -648,3 +648,12 @@ interface BaseConstructorArgs {
 export type ConstructorArgs = Partial<BaseConstructorArgs> & {
     [key: string]: any;
 };
+export interface Bbo {
+    symbol: Str;
+    timestamp: Int;
+    askPrice: Num;
+    askVolume: Num;
+    bidPrice: Num;
+    bidVolume: Num;
+    nonce?: Num
+}

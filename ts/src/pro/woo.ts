@@ -5,7 +5,7 @@ import { ExchangeError, AuthenticationError } from '../base/errors.js';
 import { ArrayCacheByTimestamp, ArrayCacheBySymbolById, ArrayCache, ArrayCacheBySymbolBySide } from '../base/ws/Cache.js';
 import { Precise } from '../base/Precise.js';
 import { sha256 } from '../static_dependencies/noble-hashes/sha256.js';
-import type { Int, Str, Strings, OrderBook, Order, Trade, Ticker, Tickers, OHLCV, Balances, Position, Dict } from '../base/types.js';
+import type { Int, Str, Strings, OrderBook, Order, Trade, Ticker, Tickers, OHLCV, Balances, Position, Dict, Bbo } from '../base/types.js';
 import Client from '../base/ws/Client.js';
 
 // ----------------------------------------------------------------------------
@@ -1293,6 +1293,7 @@ export default class woo extends wooRest {
             'balance': this.handleBalance,
             'position': this.handlePositions,
             'bbos': this.handleBidAsk,
+            'bbo': this.handleBbo,
         };
         const event = this.safeString (message, 'event');
         let method = this.safeValue (methods, event);
@@ -1385,5 +1386,49 @@ export default class woo extends wooRest {
                 delete client.subscriptions['authenticated'];
             }
         }
+    }
+
+    async watchBbo (symbol: string, limit: Int = undefined, params = {}) {
+        await this.loadMarkets ();
+        const name = 'bbo';
+        const market = this.market (symbol);
+        const topic = market['id'] + '@' + name;
+        const request = {
+            'event': 'subscribe',
+            'topic': topic,
+        };
+        const message = this.extend (request, params);
+        const bbo = await this.watchPublic (topic, message);
+        return bbo;
+    }
+
+    handleBbo (client: Client, message) {
+        // @see https://docs.woo.org/#bbo
+        // {
+        //   "topic": "SPOT_WOO_USDT@bbo",
+        //   "ts": 1614152296945,
+        //   "data": {
+        //     "symbol": "SPOT_WOO_USDT",
+        //     "ask": 0.30939,
+        //     "askSize": 4508.53,
+        //     "bid": 0.30776,
+        //     "bidSize": 25246.14
+        //   }
+        // }
+        const data = this.safeValue (message, 'data');
+        const marketId = this.safeString (data, 'symbol');
+        const market = this.safeMarket (marketId);
+        const symbol = market['symbol'];
+        const topic = this.safeString (message, 'topic');
+        const timestamp = this.safeInteger (message, 'ts', this.milliseconds ());
+        const bbo: Bbo = {
+            'symbol': symbol,
+            'timestamp': timestamp,
+            'askPrice': this.safeNumber (data, 'ask'),
+            'askVolume': this.safeNumber (data, 'askSize'),
+            'bidPrice': this.safeNumber (data, 'bid'),
+            'bidVolume': this.safeNumber (data, 'bidSize'),
+        };
+        client.resolve (bbo, topic);
     }
 }

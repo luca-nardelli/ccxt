@@ -1180,7 +1180,13 @@ export default class woo extends wooRest {
             'topic': topic,
         };
         const message = this.extend (request, params);
-        return await this.watchPrivate (messageHash, message);
+        await this.watchPrivate (messageHash, message);
+        // The returned balance in the ws message only contains the "total" amount
+        // So we work around the issue by re-fetching it via REST
+        const parsedBalances = await this.fetchBalance ();
+        this.balance = this.safeBalance (parsedBalances);
+        // @ts-ignore
+        return this.balance;
     }
 
     handleBalance (client, message) {

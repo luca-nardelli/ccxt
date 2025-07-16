@@ -811,6 +811,16 @@ export default class mexc extends mexcRest {
         if (!(symbol in this.orderbooks)) {
             this.orderbooks[symbol] = this.orderBook ();
         }
+        if (subscription === true) {
+            // we set client.subscriptions[messageHash] to 1
+            // once we have received the first delta and initialized the orderbook
+            client.subscriptions[messageHash] = 1;
+            this.orderbooks[symbol] = this.orderBook ({});
+        }
+        // If we don't have a subscription, ignore the message to prevent spamming errors
+        if (!subscription) {
+            return;
+        }
         const storedOrderBook = this.orderbooks[symbol];
         const nonce = this.safeInteger (storedOrderBook, 'nonce');
         if (nonce === undefined) {
@@ -1776,6 +1786,14 @@ export default class mexc extends mexcRest {
         //    }
         // Set the default to an empty string if the message is empty during the test.
         const msg = this.safeString (message, 'msg', '');
+        //
+        //    This is sent when we try to re-subscribe to the same stream
+        //    {
+        //        id: 0,
+        //        code: 0,
+        //        msg: ''
+        //    }
+        //
         if (msg === 'PONG') {
             this.handlePong (client, message);
         } else if (msg.indexOf ('@') > -1) {

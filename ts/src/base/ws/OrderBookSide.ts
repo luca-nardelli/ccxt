@@ -7,6 +7,8 @@
 // Email: carlo.revelli@berkeley.edu
 //
 
+import { sortBy } from '../../base/functions/generic.js';
+
 /**
  *
  * @param array
@@ -31,6 +33,7 @@ interface IOrderBookSide<T> extends Array<T> {
     store(price: any, size: any);
     storeArray(array: any[]);
     limit();
+    reset(snapshot: Array<[price: number, size: number]>, isSorted?: boolean);
 }
 
 class OrderBookSide extends Array implements IOrderBookSide<any> {
@@ -51,6 +54,36 @@ class OrderBookSide extends Array implements IOrderBookSide<any> {
         this.length = 0
         for (let i = 0; i < deltas.length; i++) {
             this.storeArray (deltas[i].slice ())  // slice is muy importante
+        }
+    }
+
+    // Resets the side using a snapshot
+    reset (snapshot: Array<[price: number, size: number]>) {
+        // Reset index
+        this.index.fill (Number.MAX_VALUE, 0, this.length);
+        this.length = 0;
+        if (snapshot.length === 0) {
+            return;
+        }
+        // Bids = descending
+        snapshot = sortBy (snapshot, 0, this.side);
+        // in the rare case of very large orderbooks being sent
+        if (snapshot.length > this.index.length) {
+            const existing = Array.from (this.index)
+            existing.length = this.length * 2
+            existing.fill (Number.MAX_VALUE, this.index.length)
+            this.index = new Float64Array (existing)
+        }
+        let lastPrice: number | null = null;
+        for (let i = 0; i < snapshot.length; i++) {
+            this.length++;
+            const level = snapshot[i];
+            if (lastPrice === level[0]) {
+                throw new Error ('Duplicate price level found in OrderBookSide snapshot');
+            }
+            lastPrice = level[0];
+            this.index[i]    = this.side ? -level[0] : level[0];
+            this[i]          = level;
         }
     }
 
@@ -109,6 +142,10 @@ class CountedOrderBookSide extends OrderBookSide {
 
     store (price, size) {
         throw new Error ('CountedOrderBookSide.store() is not supported, use storeArray([price, size, count]) instead')
+    }
+
+    reset (snapshot: Array<[price: number, size: number]>) {
+        throw new Error ('Not implemented');
     }
 
     storeArray (delta) {
@@ -172,6 +209,10 @@ class IndexedOrderBookSide extends Array implements IOrderBookSide<any> {
             this.length = i
             this.storeArray (deltas[i].slice ())  // slice is muy importante
         }
+    }
+
+    reset (snapshot: Array<[price: number, size: number]>) {
+        throw new Error ('Not implemented');
     }
 
     store (price, size) {

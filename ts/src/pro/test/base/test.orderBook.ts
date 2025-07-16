@@ -33,6 +33,14 @@ function testWsOrderBook () {
         'symbol': undefined,
     };
 
+    const orderBookInputSnapshot = {
+        'bids': [[10.0, 10], [9.1, 11], [8.2, 12], [7.3, 13], [6.4, 14]],
+        'asks': [[16.6, 10], [15.5, 11], [14.4, 12], [13.3, 13], [12.2, 14], [11.1, 13]],
+        'timestamp': 1574827239000,
+        'nonce': 69,
+        'symbol': undefined,
+    };
+
     const orderBookTarget = {
         'bids': [ [ 10.0, 10 ], [ 9.1, 11 ], [ 8.2, 12 ], [ 7.3, 13 ], [ 6.4, 14 ] ],
         'asks': [ [ 11.1, 13 ], [ 12.2, 14 ], [ 13.3, 13 ], [ 14.4, 12 ], [ 15.5, 11 ], [ 16.6, 10 ] ],
@@ -393,7 +401,7 @@ function testWsOrderBook () {
 
     const resetBook = new OrderBook (storeBid);
     resetBook.limit ();
-    resetBook.reset (orderBookInput);
+    resetBook.reset(orderBookInputSnapshot);
     resetBook.limit ();
     assert (equals (resetBook, orderBookTarget));
 }

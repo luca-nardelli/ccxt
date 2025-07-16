@@ -6,6 +6,7 @@ import { Precise } from '../base/Precise.js';
 import { ArrayCache, ArrayCacheBySymbolById, ArrayCacheBySymbolBySide, ArrayCacheByTimestamp } from '../base/ws/Cache.js';
 import { sha256 } from '../static_dependencies/noble-hashes/sha256.js';
 import type { Int, OHLCV, Str, Strings, OrderBook, Order, Trade, Ticker, Tickers, Position, Balances, Dict } from '../base/types.js';
+import type { OrderBook as WsOrderBook } from '../base/ws/OrderBook';
 import Client from '../base/ws/Client.js';
 
 //  ---------------------------------------------------------------------------
@@ -728,7 +729,12 @@ export default class bitget extends bitgetRest {
                 }
             }
         } else {
-            const orderbook = this.orderBook ({});
+            let orderbook: WsOrderBook;
+            if (symbol in this.orderbooks) {
+                orderbook = this.orderbooks[symbol];
+            } else {
+                orderbook = this.orderBook ({});
+            }
             const parsedOrderbook = this.parseOrderBook (rawOrderBook, symbol, timestamp);
             orderbook.reset (parsedOrderbook);
             this.orderbooks[symbol] = orderbook;

@@ -5052,11 +5052,7 @@ export default class Exchange {
         });
     }
 
-    safeMarket (marketId: Str = undefined, market: Market = undefined, delimiter: Str = undefined, marketType: Str = undefined): MarketInterface {
-        const result = this.safeMarketStructure ({
-            'symbol': marketId,
-            'marketId': marketId,
-        });
+    safeMarket (marketId: Str, market: Market = undefined, delimiter: Str = undefined, marketType: Str = undefined): MarketInterface {
         if (marketId !== undefined) {
             if ((this.markets_by_id !== undefined) && (marketId in this.markets_by_id)) {
                 const markets = this.markets_by_id[marketId];
@@ -5079,6 +5075,10 @@ export default class Exchange {
                     }
                 }
             } else if (delimiter !== undefined && delimiter !== '') {
+                const result = this.safeMarketStructure ({
+                    'symbol': marketId,
+                    'marketId': marketId,
+                });
                 const parts = marketId.split (delimiter);
                 const partsLength = parts.length;
                 if (partsLength === 2) {
@@ -5096,7 +5096,10 @@ export default class Exchange {
         if (market !== undefined) {
             return market;
         }
-        return result;
+        return this.safeMarketStructure ({
+            'symbol': marketId,
+            'marketId': marketId,
+        });
     }
 
     checkRequiredCredentials (error = true) {

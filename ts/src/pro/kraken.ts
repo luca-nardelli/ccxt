@@ -987,21 +987,44 @@ export default class kraken extends krakenRest {
         // checksum temporarily disabled because the exchange checksum was not reliable
         const checksum = this.handleOption ('watchOrderBook', 'checksum', false);
         if (checksum) {
-            const payloadArray = [];
+            const payloadArray: string[] = [];
             if (c !== undefined) {
                 const checkAsks = orderbook['asks'];
                 const checkBids = orderbook['bids'];
-                // const checkAsks = asks.map ((elem) => [ elem['price'], elem['qty'] ]);
-                // const checkBids = bids.map ((elem) => [ elem['price'], elem['qty'] ]);
-                for (let i = 0; i < 10; i++) {
-                    const currentAsk = this.safeValue (checkAsks, i, {});
-                    const formattedAsk = this.formatNumber (currentAsk[0]) + this.formatNumber (currentAsk[1]);
-                    payloadArray.push (formattedAsk);
+                // Determina la lunghezza dei decimali dall'esempio
+                let priceLength = 0;
+                let amountLength = 0;
+                // Cerca un esempio valido per determinare la precisione
+                if (checkAsks.length > 0 && checkAsks[0]) {
+                    const examplePrice = this.numberToString (checkAsks[0][0]);
+                    const exampleAmount = this.numberToString (checkAsks[0][1]);
+                    const priceParts = examplePrice.split ('.');
+                    const amountParts = exampleAmount.split ('.');
+                    priceLength = (priceParts[1] && priceParts[1].length) ? priceParts[1].length : 0;
+                    amountLength = (amountParts[1] && amountParts[1].length) ? amountParts[1].length : 0;
+                } else if (checkBids.length > 0 && checkBids[0]) {
+                    const examplePrice = this.numberToString (checkBids[0][0]);
+                    const exampleAmount = this.numberToString (checkBids[0][1]);
+                    const priceParts = examplePrice.split ('.');
+                    const amountParts = exampleAmount.split ('.');
+                    priceLength = (priceParts[1] && priceParts[1].length) ? priceParts[1].length : 0;
+                    amountLength = (amountParts[1] && amountParts[1].length) ? amountParts[1].length : 0;
                 }
+                // Processa asks
                 for (let i = 0; i < 10; i++) {
-                    const currentBid = this.safeValue (checkBids, i, {});
-                    const formattedBid = this.formatNumber (currentBid[0]) + this.formatNumber (currentBid[1]);
-                    payloadArray.push (formattedBid);
+                    const currentAsk = this.safeValue (checkAsks, i);
+                    if (currentAsk && currentAsk.length >= 2 && currentAsk[0] !== undefined && currentAsk[1] !== undefined) {
+                        const formattedAsk = this.formatNumber (currentAsk[0], priceLength) + this.formatNumber (currentAsk[1], amountLength);
+                        payloadArray.push (formattedAsk);
+                    }
+                }
+                // Processa bids
+                for (let i = 0; i < 10; i++) {
+                    const currentBid = this.safeValue (checkBids, i);
+                    if (currentBid && currentBid.length >= 2 && currentBid[0] !== undefined && currentBid[1] !== undefined) {
+                        const formattedBid = this.formatNumber (currentBid[0], priceLength) + this.formatNumber (currentBid[1], amountLength);
+                        payloadArray.push (formattedBid);
+                    }
                 }
             }
             const payload = payloadArray.join ('');
@@ -1035,19 +1058,27 @@ export default class kraken extends krakenRest {
         }
     }
 
-    formatNumber (data) {
-        const parts = data.split ('.');
-        const integer = this.safeString (parts, 0);
+    formatNumber (data: any, length = 0): string {
+        if (data === undefined || data === null) {
+            return '';
+        }
+        const stringNumber = this.numberToString (data);
+        const parts = stringNumber.split ('.');
+        const integer = this.safeString (parts, 0, '0');
         const decimals = this.safeString (parts, 1, '');
-        let joinedResult = integer + decimals;
+        const paddedDecimals = decimals.padEnd (length, '0');
+        const joined = integer + paddedDecimals;
         let i = 0;
-        while (joinedResult[i] === '0') {
+        while (i < joined.length && joined[i] === '0') {
             i += 1;
         }
-        if (i > 0) {
-            joinedResult = joinedResult.slice (i);
+        if (i > 0 && i < joined.length) {
+            return joined.slice (i);
+        } else if (i === joined.length) {
+            return '0';
+        } else {
+            return joined;
         }
-        return joinedResult;
     }
 
     handleSystemStatus (client: Client, message) {

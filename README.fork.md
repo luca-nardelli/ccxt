@@ -15,3 +15,4 @@ fix/mexc-nonce-out-of-order-loop
 feat/perf
 feat/bbo
 feat/perf-unsafe
+fix-kraken-checksum

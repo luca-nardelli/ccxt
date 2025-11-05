@@ -1,6 +1,6 @@
 {
-  "name": "ccxt",
-  "version": "4.5.32",
+  "name": "@lnardelli/ccxt",
+  "version": "4.5.32000",
   "description": "A cryptocurrency trading API with more than 100 exchanges in JavaScript / TypeScript / Python / C# / PHP / Go",
   "unpkg": "dist/ccxt.browser.min.js",
   "type": "module",
@@ -55,6 +55,7 @@
     "addJsHeaders": "tsx build/transpile.ts --js-headers",
     "tsBuild": "tsc && npm run addJsHeaders || echo \"\"",
     "tsBuildExamples": "tsc -p ./examples/tsconfig.json",
+    "tsBuildBenchmarks": "tsc -p ./benchmarks/tsconfig.json",
     "emitAPI": "tsx build/generateImplicitAPI.ts",
     "emitAPITs": "tsx build/generateImplicitAPI.ts -- --ts",
     "emitAPIPy": "tsx build/generateImplicitAPI.ts -- --python",
@@ -230,6 +231,7 @@
     "rollup": "^2.70.1",
     "terser-webpack-plugin": "^5.3.9",
     "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.2",
     "tsx": "^4.7.2",
     "typescript": "4.7.4",
     "webpack-cli": "^5.0.1",
@@ -331,6 +333,7 @@
   },
   "ethereum": "0x26a3CB49578F07000575405a57888681249c35Fd",
   "dependencies": {
+    "tinybench": "^2.9.0",
     "ws": "^8.8.1"
   }
 }

@@ -126,10 +126,14 @@ export default class bingx extends bingxRest {
             'id': uuid,
             'dataType': subscriptionHash,
         };
+        const subscription: Dict = {
+            'unsubscribe': false,
+            'id': uuid,
+        };
         if (marketType === 'swap') {
             request['reqType'] = 'sub';
         }
-        return await this.watch (url, messageHash, this.extend (request, params), subscriptionHash);
+        return await this.watch (url, messageHash, this.extend (request, params), subscriptionHash, subscription);
     }
 
     handleBookTicker (client: Client, message) {

@@ -944,7 +944,16 @@ export default class bitget extends bitgetRest {
             } else {
                 orderbook = this.orderBook ({});
             }
-            const parsedOrderbook = this.parseOrderBook (rawOrderBook, symbol, timestamp);
+            let bidsKey = 'bids';
+            let asksKey = 'asks';
+            // bitget UTA has `a` and `b` instead of `asks` and `bids`
+            if ('a' in rawOrderBook && !('asks' in rawOrderBook)) {
+                asksKey = 'a';
+            }
+            if ('b' in rawOrderBook && !('bids' in rawOrderBook)) {
+                bidsKey = 'b';
+            }
+            const parsedOrderbook = this.parseOrderBook (rawOrderBook, symbol, timestamp, bidsKey, asksKey);
             orderbook.reset (parsedOrderbook);
             this.orderbooks[symbol] = orderbook;
         }

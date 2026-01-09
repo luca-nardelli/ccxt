@@ -168,7 +168,7 @@ export default class kraken extends krakenRest {
     handleHeartbeat(client: Client, message: any): void;
     handleOrderBook(client: Client, message: any): void;
     customHandleDeltas(bookside: any, deltas: any): void;
-    formatNumber(data: any): string;
+    formatNumber(data: any, length?: number): string;
     handleSystemStatus(client: Client, message: any): any;
     authenticate(params?: {}): Promise<string>;
     watchPrivate(name: any, symbol?: Str, since?: Int, limit?: Int, params?: {}): Promise<any>;

@@ -7,6 +7,7 @@
 //  ---------------------------------------------------------------------------
 import Exchange from './abstract/bitget.js';
 import { ExchangeError, ExchangeNotAvailable, NotSupported, OnMaintenance, ArgumentsRequired, BadRequest, AccountSuspended, InvalidAddress, PermissionDenied, DDoSProtection, InsufficientFunds, InvalidNonce, CancelPending, InvalidOrder, OrderNotFound, AuthenticationError, RequestTimeout, BadSymbol, RateLimitExceeded, RestrictedLocation } from './base/errors.js';
+import { asInteger } from './base/functions/type.js';
 import { Precise } from './base/Precise.js';
 import { TICK_SIZE } from './base/functions/number.js';
 import { sha256 } from './static_dependencies/noble-hashes/sha256.js';
@@ -2424,7 +2425,7 @@ export default class bitget extends Exchange {
                         'max': undefined,
                     },
                     'cost': {
-                        'min': undefined,
+                        'min': this.safeNumber(market, 'minOrderAmount'),
                         'max': undefined,
                     },
                 },
@@ -11165,5 +11166,16 @@ export default class bitget extends Exchange {
             }
         }
         return { 'url': url, 'method': method, 'body': body, 'headers': headers };
+    }
+    parseBidAsk(bidask, priceKey = 0, amountKey = 1, countOrIdKey = 2) {
+        // bidask: [number, number] | [number, number, number]
+        // Specialized and faster version of parseBidsAsks for bitget, overrides base implementation
+        const price = this.parseNumber(bidask[priceKey]);
+        const amount = this.parseNumber(bidask[amountKey]);
+        if (bidask.length > 2) {
+            const countOrId = asInteger(this.parseNumber(bidask[countOrIdKey]));
+            return [price, amount, countOrId];
+        }
+        return [price, amount];
     }
 }

@@ -25286,7 +25286,7 @@ class Exchange {
             'bids': this.sortBy(bids, 0, true),
             'asks': this.sortBy(asks, 0),
             'timestamp': timestamp,
-            'datetime': this.iso8601(timestamp),
+            // 'datetime': this.iso8601 (timestamp),
             'nonce': undefined,
         };
     }
@@ -31842,6 +31842,7 @@ class OrderBook {
         if (this.timestamp) {
             this.datetime = (0,_base_functions_time_js__WEBPACK_IMPORTED_MODULE_2__/* .iso8601 */ .LC)(this.timestamp);
         }
+        this.depth = depth;
     }
     limit() {
         this.asks.limit();
@@ -31860,23 +31861,25 @@ class OrderBook {
         return this.reset(snapshot);
     }
     reset(snapshot = {}) {
-        this.asks.index.fill(Number.MAX_VALUE);
-        this.asks.length = 0;
-        if (snapshot.asks) {
-            for (let i = 0; i < snapshot.asks.length; i++) {
-                this.asks.storeArray(snapshot.asks[i]);
-            }
-        }
-        this.bids.index.fill(Number.MAX_VALUE);
-        this.bids.length = 0;
-        if (snapshot.bids) {
-            for (let i = 0; i < snapshot.bids.length; i++) {
-                this.bids.storeArray(snapshot.bids[i]);
-            }
-        }
+        this.asks.reset(snapshot.asks ?? []);
+        this.bids.reset(snapshot.bids ?? []);
+        // this.asks.index.fill (Number.MAX_VALUE, 0, this.asks.length)
+        // this.asks.length = 0
+        // if (snapshot.asks) {
+        //     for (let i = 0; i < snapshot.asks.length; i++) {
+        //         this.asks.storeArray (snapshot.asks[i])
+        //     }
+        // }
+        // this.bids.index.fill (Number.MAX_VALUE, 0, this.bids.length)
+        // this.bids.length = 0
+        // if (snapshot.bids) {
+        //     for (let i = 0; i < snapshot.bids.length; i++) {
+        //         this.bids.storeArray (snapshot.bids[i])
+        //     }
+        // }
         this.nonce = snapshot.nonce;
         this.timestamp = snapshot.timestamp;
-        this.datetime = (0,_base_functions_time_js__WEBPACK_IMPORTED_MODULE_2__/* .iso8601 */ .LC)(this.timestamp);
+        // this.datetime = iso8601 (this.timestamp)
         this.symbol = snapshot.symbol;
         return this;
     }
@@ -31941,6 +31944,7 @@ class IndexedOrderBook extends OrderBook {
 /* harmony export */   o5: () => (/* binding */ IndexedAsks)
 /* harmony export */ });
 /* unused harmony exports OrderBookSide, CountedOrderBookSide, IndexedOrderBookSide */
+/* harmony import */ var _base_functions_generic_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7437);
 /* eslint-disable max-classes-per-file */
 // @ts-nocheck
 // ----------------------------------------------------------------------------
@@ -31949,6 +31953,7 @@ class IndexedOrderBook extends OrderBook {
 // Author: github.com/frosty00
 // Email: carlo.revelli@berkeley.edu
 //
+
 /**
  *
  * @param array
@@ -31986,6 +31991,35 @@ class OrderBookSide extends Array {
         this.length = 0;
         for (let i = 0; i < deltas.length; i++) {
             this.storeArray(deltas[i].slice()); // slice is muy importante
+        }
+    }
+    // Resets the side using a snapshot
+    reset(snapshot) {
+        // Reset index
+        this.index.fill(Number.MAX_VALUE, 0, this.length);
+        this.length = 0;
+        if (snapshot.length === 0) {
+            return;
+        }
+        // Bids = descending
+        snapshot = (0,_base_functions_generic_js__WEBPACK_IMPORTED_MODULE_0__/* .sortBy */ .Ul)(snapshot, 0, this.side);
+        // in the rare case of very large orderbooks being sent
+        if (snapshot.length > this.index.length) {
+            const existing = Array.from(this.index);
+            existing.length = this.length * 2;
+            existing.fill(Number.MAX_VALUE, this.index.length);
+            this.index = new Float64Array(existing);
+        }
+        let lastPrice = null;
+        for (let i = 0; i < snapshot.length; i++) {
+            this.length++;
+            const level = snapshot[i];
+            if (lastPrice === level[0]) {
+                throw new Error('Duplicate price level found in OrderBookSide snapshot');
+            }
+            lastPrice = level[0];
+            this.index[i] = this.side ? -level[0] : level[0];
+            this[i] = level;
         }
     }
     storeArray(delta) {
@@ -32040,6 +32074,9 @@ class OrderBookSide extends Array {
 class CountedOrderBookSide extends OrderBookSide {
     store(price, size) {
         throw new Error('CountedOrderBookSide.store() is not supported, use storeArray([price, size, count]) instead');
+    }
+    reset(snapshot) {
+        throw new Error('Not implemented');
     }
     storeArray(delta) {
         const price = delta[0];
@@ -32102,6 +32139,9 @@ class IndexedOrderBookSide extends Array {
             this.length = i;
             this.storeArray(deltas[i].slice()); // slice is muy importante
         }
+    }
+    reset(snapshot) {
+        throw new Error('Not implemented');
     }
     store(price, size) {
         throw new Error('IndexedOrderBook.store() is not supported, use storeArray([price, size, id]) instead');
@@ -65308,10 +65348,12 @@ class bitflyer extends _abstract_bitflyer_js__WEBPACK_IMPORTED_MODULE_0__/* ["de
 /* harmony export */ });
 /* harmony import */ var _abstract_bitget_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9152);
 /* harmony import */ var _base_errors_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2079);
+/* harmony import */ var _base_functions_type_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(6834);
 /* harmony import */ var _base_Precise_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5147);
 /* harmony import */ var _base_functions_number_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(1579);
 /* harmony import */ var _static_dependencies_noble_hashes_sha256_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(4852);
 //  ---------------------------------------------------------------------------
+
 
 
 
@@ -67731,7 +67773,7 @@ class bitget extends _abstract_bitget_js__WEBPACK_IMPORTED_MODULE_0__/* ["defaul
                         'max': undefined,
                     },
                     'cost': {
-                        'min': undefined,
+                        'min': this.safeNumber(market, 'minOrderAmount'),
                         'max': undefined,
                     },
                 },
@@ -76472,6 +76514,17 @@ class bitget extends _abstract_bitget_js__WEBPACK_IMPORTED_MODULE_0__/* ["defaul
             }
         }
         return { 'url': url, 'method': method, 'body': body, 'headers': headers };
+    }
+    parseBidAsk(bidask, priceKey = 0, amountKey = 1, countOrIdKey = 2) {
+        // bidask: [number, number] | [number, number, number]
+        // Specialized and faster version of parseBidsAsks for bitget, overrides base implementation
+        const price = this.parseNumber(bidask[priceKey]);
+        const amount = this.parseNumber(bidask[amountKey]);
+        if (bidask.length > 2) {
+            const countOrId = (0,_base_functions_type_js__WEBPACK_IMPORTED_MODULE_5__/* .asInteger */ .JU)(this.parseNumber(bidask[countOrIdKey]));
+            return [price, amount, countOrId];
+        }
+        return [price, amount];
     }
 }
 
@@ -116443,7 +116496,7 @@ class bybit extends _abstract_bybit_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"
         return this.safeTicker({
             'symbol': symbol,
             'timestamp': timestamp,
-            'datetime': this.iso8601(timestamp),
+            // 'datetime': this.iso8601 (timestamp),
             'high': high,
             'low': low,
             'bid': bid,
@@ -305821,6 +305874,7 @@ class bingx extends _bingx_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
                 'ws': true,
                 'watchTrades': true,
                 'watchTradesForSymbols': false,
+                'watchBbo': true,
                 'watchOrderBook': true,
                 'watchOrderBookForSymbols': false,
                 'watchOHLCV': true,
@@ -305893,6 +305947,106 @@ class bingx extends _bingx_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
                 'keepAlive': 1800000, // 30 minutes
             },
         });
+    }
+    async watchBbo(symbol) {
+        const ticker = await this.watchBookTicker(symbol);
+        if (ticker) {
+            return {
+                'symbol': ticker.symbol,
+                'timestamp': ticker.timestamp,
+                'askPrice': ticker.askPrice ? parseFloat(ticker.askPrice) : undefined,
+                'askVolume': ticker.askVolume ? parseFloat(ticker.askVolume) : undefined,
+                'bidPrice': ticker.bidPrice ? parseFloat(ticker.bidPrice) : undefined,
+                'bidVolume': ticker.bidVolume ? parseFloat(ticker.bidVolume) : undefined,
+                'nonce': ticker.info.u,
+            };
+        }
+    }
+    async watchBookTicker(symbol, params = {}) {
+        await this.loadMarkets();
+        const market = this.market(symbol);
+        let marketType = undefined;
+        let subType = undefined;
+        let url = undefined;
+        [marketType, params] = this.handleMarketTypeAndParams('watchBbo', market, params);
+        [subType, params] = this.handleSubTypeAndParams('watchBbo', market, params, 'linear');
+        if (marketType === 'swap') {
+            url = this.safeString(this.urls['api']['ws'], subType);
+        }
+        else {
+            url = this.safeString(this.urls['api']['ws'], marketType);
+        }
+        const subscriptionHash = market['id'] + '@bookTicker';
+        const messageHash = this.getMessageHash('bookTicker', market['symbol']);
+        const uuid = this.uuid();
+        const request = {
+            'id': uuid,
+            'dataType': subscriptionHash,
+        };
+        const subscription = {
+            'unsubscribe': false,
+            'id': uuid,
+        };
+        if (marketType === 'swap') {
+            request['reqType'] = 'sub';
+        }
+        return await this.watch(url, messageHash, this.extend(request, params), subscriptionHash, subscription);
+    }
+    handleBookTicker(client, message) {
+        // {
+        //     "code": 0,
+        //     "dataType": "BTC-USDT@bookTicker",
+        //     "data": {
+        //         "e": "bookTicker",
+        //         "u": 1727471514525,
+        //         "E": 1706498923556,
+        //         "T": 1706498883023,
+        //         "s": "BTC-USDT",
+        //         "b": "65787.1",  // Best bid price
+        //         "B": "43691",    // Best bid quantity
+        //         "a": "65793.8",  // Best ask price
+        //         "A": "26691"     // Best ask quantity
+        //     }
+        // }
+        const data = this.safeValue(message, 'data', {});
+        const marketId = this.safeString(data, 's');
+        const isSwap = client.url.indexOf('swap') >= 0;
+        const marketType = isSwap ? 'swap' : 'spot';
+        const market = this.safeMarket(marketId, undefined, undefined, marketType);
+        const symbol = market['symbol'];
+        const time = marketType === 'swap' ? 'T' : 'E';
+        const bookTicker = {
+            'symbol': symbol,
+            'bidPrice': this.safeString(data, 'b'),
+            'bidVolume': this.safeString(data, 'B'),
+            'askPrice': this.safeString(data, 'a'),
+            'askVolume': this.safeString(data, 'A'),
+            'timestamp': this.safeInteger(data, time),
+            // 'bidPrice': data['b'],  // Best bid price
+            // 'bidVolume': data['B'],  // Best bid quantity
+            // 'askPrice': data['a'],  // Best ask price
+            // 'askVolume': data['A'],  // Best ask quantity
+            // 'timestamp': time,  // Transaction time
+            // 'datetime': this.iso8601 (this.safeInteger (data, time)),  // ISO 8601 formatted time
+            'datetime': undefined,
+            'info': data, // Raw data for further inspection
+        };
+        const messageHash = this.getMessageHash('bookTicker', symbol);
+        client.resolve(bookTicker, messageHash);
+    }
+    parseWsBookTicker(message, market = undefined) {
+        const timestamp = this.safeInteger(message, 'T');
+        const symbol = market['symbol'];
+        return {
+            'symbol': symbol,
+            'bid': this.safeString(message, 'b'),
+            'bidVolume': this.safeString(message, 'B'),
+            'ask': this.safeString(message, 'a'),
+            'askVolume': this.safeString(message, 'A'),
+            'timestamp': timestamp,
+            'datetime': this.iso8601(timestamp),
+            'info': message,
+        };
     }
     async unWatch(messageHash, subMessageHash, subscribeHash, dataType, topic, market, methodName, params = {}) {
         let marketType = undefined;
@@ -307297,6 +307451,10 @@ class bingx extends _bingx_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
         }
         if (dataType.indexOf('@kline') >= 0) {
             this.handleOHLCV(client, message);
+            return;
+        }
+        if (dataType.indexOf('@bookTicker') >= 0) {
+            this.handleBookTicker(client, message);
             return;
         }
         if (dataType.indexOf('executionReport') >= 0) {
@@ -309617,8 +309775,23 @@ class bitget extends _bitget_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A
             }
         }
         else {
-            const orderbook = this.orderBook({});
-            const parsedOrderbook = this.parseOrderBook(rawOrderBook, symbol, timestamp);
+            let orderbook;
+            if (symbol in this.orderbooks) {
+                orderbook = this.orderbooks[symbol];
+            }
+            else {
+                orderbook = this.orderBook({});
+            }
+            let bidsKey = 'bids';
+            let asksKey = 'asks';
+            // bitget UTA has `a` and `b` instead of `asks` and `bids`
+            if ('a' in rawOrderBook && !('asks' in rawOrderBook)) {
+                asksKey = 'a';
+            }
+            if ('b' in rawOrderBook && !('bids' in rawOrderBook)) {
+                bidsKey = 'b';
+            }
+            const parsedOrderbook = this.parseOrderBook(rawOrderBook, symbol, timestamp, bidsKey, asksKey);
             orderbook.reset(parsedOrderbook);
             this.orderbooks[symbol] = orderbook;
         }
@@ -322056,6 +322229,10 @@ class bullish extends _bullish_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ 
 
 //  ---------------------------------------------------------------------------
 class bybit extends _bybit_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
+    constructor() {
+        super(...arguments);
+        this.isWatchingBidsAsks = false;
+    }
     describe() {
         return this.deepExtend(super.describe(), {
             'has': {
@@ -322644,7 +322821,7 @@ class bybit extends _bybit_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
         }
         const timestamp = this.safeInteger(message, 'ts');
         parsed['timestamp'] = timestamp;
-        parsed['datetime'] = this.iso8601(timestamp);
+        // parsed['datetime'] = this.iso8601 (timestamp);
         this.tickers[symbol] = parsed;
         const messageHash = 'ticker:' + symbol;
         client.resolve(this.tickers[symbol], messageHash);
@@ -322659,6 +322836,7 @@ class bybit extends _bybit_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
      * @returns {object} a [ticker structure]{@link https://docs.ccxt.com/?id=ticker-structure}
      */
     async watchBidsAsks(symbols = undefined, params = {}) {
+        this.isWatchingBidsAsks = true;
         await this.loadMarkets();
         symbols = this.marketSymbols(symbols, undefined, false);
         const messageHashes = [];
@@ -323038,11 +323216,16 @@ class bybit extends _bybit_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
         const symbol = market['symbol'];
         const timestamp = this.safeInteger(message, 'ts');
         if (!(symbol in this.orderbooks)) {
-            this.orderbooks[symbol] = this.orderBook();
+            this.orderbooks[symbol] = this.orderBook({}, this.parseNumber(limit));
         }
         const orderbook = this.orderbooks[symbol];
         orderbook['symbol'] = symbol;
         if (isSnapshot) {
+            // Reset book if depth of snapshot is higher than actual one, so that we can adapt to the new depth
+            const depth = this.parseNumber(limit);
+            if (depth > orderbook.depth) {
+                this.orderbooks[symbol] = this.orderBook({}, depth);
+            }
             const snapshot = this.parseOrderBook(data, symbol, timestamp, 'b', 'a');
             orderbook.reset(snapshot);
         }
@@ -323052,12 +323235,13 @@ class bybit extends _bybit_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
             this.handleDeltas(orderbook['asks'], asks);
             this.handleDeltas(orderbook['bids'], bids);
             orderbook['timestamp'] = timestamp;
-            orderbook['datetime'] = this.iso8601(timestamp);
+            // orderbook['datetime'] = this.iso8601 (timestamp);
+            orderbook['datetime'] = undefined;
         }
         const messageHash = 'orderbook' + ':' + symbol;
         this.orderbooks[symbol] = orderbook;
         client.resolve(orderbook, messageHash);
-        if (limit === '1') {
+        if (limit === '1' && this.isWatchingBidsAsks) {
             const bidask = this.parseWsBidAsk(this.orderbooks[symbol], market);
             const newBidsAsks = {};
             newBidsAsks[symbol] = bidask;
@@ -351523,17 +351707,41 @@ class kraken extends _kraken_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A
             if (c !== undefined) {
                 const checkAsks = orderbook['asks'];
                 const checkBids = orderbook['bids'];
-                // const checkAsks = asks.map ((elem) => [ elem['price'], elem['qty'] ]);
-                // const checkBids = bids.map ((elem) => [ elem['price'], elem['qty'] ]);
-                for (let i = 0; i < 10; i++) {
-                    const currentAsk = this.safeValue(checkAsks, i, {});
-                    const formattedAsk = this.formatNumber(currentAsk[0]) + this.formatNumber(currentAsk[1]);
-                    payloadArray.push(formattedAsk);
+                // Determina la lunghezza dei decimali dall'esempio
+                let priceLength = 0;
+                let amountLength = 0;
+                // Cerca un esempio valido per determinare la precisione
+                if (checkAsks.length > 0 && checkAsks[0]) {
+                    const examplePrice = this.numberToString(checkAsks[0][0]);
+                    const exampleAmount = this.numberToString(checkAsks[0][1]);
+                    const priceParts = examplePrice.split('.');
+                    const amountParts = exampleAmount.split('.');
+                    priceLength = (priceParts[1] && priceParts[1].length) ? priceParts[1].length : 0;
+                    amountLength = (amountParts[1] && amountParts[1].length) ? amountParts[1].length : 0;
                 }
+                else if (checkBids.length > 0 && checkBids[0]) {
+                    const examplePrice = this.numberToString(checkBids[0][0]);
+                    const exampleAmount = this.numberToString(checkBids[0][1]);
+                    const priceParts = examplePrice.split('.');
+                    const amountParts = exampleAmount.split('.');
+                    priceLength = (priceParts[1] && priceParts[1].length) ? priceParts[1].length : 0;
+                    amountLength = (amountParts[1] && amountParts[1].length) ? amountParts[1].length : 0;
+                }
+                // Processa asks
                 for (let i = 0; i < 10; i++) {
-                    const currentBid = this.safeValue(checkBids, i, {});
-                    const formattedBid = this.formatNumber(currentBid[0]) + this.formatNumber(currentBid[1]);
-                    payloadArray.push(formattedBid);
+                    const currentAsk = this.safeValue(checkAsks, i);
+                    if (currentAsk && currentAsk.length >= 2 && currentAsk[0] !== undefined && currentAsk[1] !== undefined) {
+                        const formattedAsk = this.formatNumber(currentAsk[0], priceLength) + this.formatNumber(currentAsk[1], amountLength);
+                        payloadArray.push(formattedAsk);
+                    }
+                }
+                // Processa bids
+                for (let i = 0; i < 10; i++) {
+                    const currentBid = this.safeValue(checkBids, i);
+                    if (currentBid && currentBid.length >= 2 && currentBid[0] !== undefined && currentBid[1] !== undefined) {
+                        const formattedBid = this.formatNumber(currentBid[0], priceLength) + this.formatNumber(currentBid[1], amountLength);
+                        payloadArray.push(formattedBid);
+                    }
                 }
             }
             const payload = payloadArray.join('');
@@ -351565,19 +351773,29 @@ class kraken extends _kraken_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A
             // bookside.slice (0, 9);
         }
     }
-    formatNumber(data) {
-        const parts = data.split('.');
-        const integer = this.safeString(parts, 0);
+    formatNumber(data, length = 0) {
+        if (data === undefined || data === null) {
+            return '';
+        }
+        const stringNumber = this.numberToString(data);
+        const parts = stringNumber.split('.');
+        const integer = this.safeString(parts, 0, '0');
         const decimals = this.safeString(parts, 1, '');
-        let joinedResult = integer + decimals;
+        const paddedDecimals = decimals.padEnd(length, '0');
+        const joined = integer + paddedDecimals;
         let i = 0;
-        while (joinedResult[i] === '0') {
+        while (i < joined.length && joined[i] === '0') {
             i += 1;
         }
-        if (i > 0) {
-            joinedResult = joinedResult.slice(i);
+        if (i > 0 && i < joined.length) {
+            return joined.slice(i);
         }
-        return joinedResult;
+        else if (i === joined.length) {
+            return '0';
+        }
+        else {
+            return joined;
+        }
     }
     handleSystemStatus(client, message) {
         //
@@ -358747,6 +358965,16 @@ class mexc extends _mexc_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
         if (!(symbol in this.orderbooks)) {
             this.orderbooks[symbol] = this.orderBook();
         }
+        // if (subscription === true) {
+        //     // we set client.subscriptions[messageHash] to 1
+        //     // once we have received the first delta and initialized the orderbook
+        //     client.subscriptions[messageHash] = 1;
+        //     this.orderbooks[symbol] = this.orderBook ({});
+        // }
+        // If we don't have a subscription, ignore the message to prevent spamming errors
+        // if (!subscription) {
+        //     return;
+        // }
         const storedOrderBook = this.orderbooks[symbol];
         const nonce = this.safeInteger(storedOrderBook, 'nonce');
         let shouldReturn = false;
@@ -358763,9 +358991,11 @@ class mexc extends _mexc_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
             this.handleDelta(storedOrderBook, data);
             const timestamp = this.safeIntegerN(message, ['t', 'ts', 'sendTime']);
             storedOrderBook['timestamp'] = timestamp;
-            storedOrderBook['datetime'] = this.iso8601(timestamp);
+            // storedOrderBook['datetime'] = this.iso8601 (timestamp);
+            storedOrderBook['datetime'] = undefined;
         }
         catch (e) {
+            storedOrderBook['nonce'] = undefined; // Reset nonce to re-trigger snapshot fetching
             delete client.subscriptions[messageHash];
             client.reject(e, messageHash);
             // return;
@@ -359788,6 +360018,14 @@ class mexc extends _mexc_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
         //    }
         // Set the default to an empty string if the message is empty during the test.
         const msg = this.safeString(message, 'msg', '');
+        //
+        //    This is sent when we try to re-subscribe to the same stream
+        //    {
+        //        id: 0,
+        //        code: 0,
+        //        msg: ''
+        //    }
+        //
         if (msg === 'PONG') {
             this.handlePong(client, message);
         }
@@ -375487,7 +375725,13 @@ class woo extends _woo_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
             'topic': topic,
         };
         const message = this.extend(request, params);
-        return await this.watchPrivate(messageHash, message);
+        await this.watchPrivate(messageHash, message);
+        // The returned balance in the ws message only contains the "total" amount
+        // So we work around the issue by re-fetching it via REST
+        const parsedBalances = await this.fetchBalance();
+        this.balance = this.safeBalance(parsedBalances);
+        // @ts-ignore
+        return this.balance;
     }
     handleBalance(client, message) {
         //
@@ -375616,6 +375860,7 @@ class woo extends _woo_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
             'balance': this.handleBalance,
             'position': this.handlePositions,
             'bbos': this.handleBidAsk,
+            'bbo': this.handleBbo,
         };
         const event = this.safeString(message, 'event');
         let method = this.safeValue(methods, event);
@@ -375704,6 +375949,48 @@ class woo extends _woo_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A {
                 delete client.subscriptions['authenticated'];
             }
         }
+    }
+    async watchBbo(symbol, limit = undefined, params = {}) {
+        await this.loadMarkets();
+        const name = 'bbo';
+        const market = this.market(symbol);
+        const topic = market['id'] + '@' + name;
+        const request = {
+            'event': 'subscribe',
+            'topic': topic,
+        };
+        const message = this.extend(request, params);
+        const bbo = await this.watchPublic(topic, message);
+        return bbo;
+    }
+    handleBbo(client, message) {
+        // @see https://docs.woo.org/#bbo
+        // {
+        //   "topic": "SPOT_WOO_USDT@bbo",
+        //   "ts": 1614152296945,
+        //   "data": {
+        //     "symbol": "SPOT_WOO_USDT",
+        //     "ask": 0.30939,
+        //     "askSize": 4508.53,
+        //     "bid": 0.30776,
+        //     "bidSize": 25246.14
+        //   }
+        // }
+        const data = this.safeValue(message, 'data');
+        const marketId = this.safeString(data, 'symbol');
+        const market = this.safeMarket(marketId);
+        const symbol = market['symbol'];
+        const topic = this.safeString(message, 'topic');
+        const timestamp = this.safeInteger(message, 'ts', this.milliseconds());
+        const bbo = {
+            'symbol': symbol,
+            'timestamp': timestamp,
+            'askPrice': this.safeNumber(data, 'ask'),
+            'askVolume': this.safeNumber(data, 'askSize'),
+            'bidPrice': this.safeNumber(data, 'bid'),
+            'bidVolume': this.safeNumber(data, 'bidSize'),
+        };
+        client.resolve(bbo, topic);
     }
 }
 
@@ -462825,7 +463112,7 @@ SOFTWARE.
 
 //-----------------------------------------------------------------------------
 // this is updated by vss.js when building
-const ccxt_version = '4.5.31';
+const ccxt_version = '4.5.32';
 ccxt_src_base_Exchange_js_WEBPACK_IMPORTED_MODULE_0_/* .Exchange */ .k.ccxtVersion = ccxt_version;
 //-----------------------------------------------------------------------------
 

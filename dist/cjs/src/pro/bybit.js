@@ -10,6 +10,10 @@ var sha256 = require('../static_dependencies/noble-hashes/sha256.js');
 // ----------------------------------------------------------------------------
 //  ---------------------------------------------------------------------------
 class bybit extends bybit$1["default"] {
+    constructor() {
+        super(...arguments);
+        this.isWatchingBidsAsks = false;
+    }
     describe() {
         return this.deepExtend(super.describe(), {
             'has': {
@@ -598,7 +602,7 @@ class bybit extends bybit$1["default"] {
         }
         const timestamp = this.safeInteger(message, 'ts');
         parsed['timestamp'] = timestamp;
-        parsed['datetime'] = this.iso8601(timestamp);
+        // parsed['datetime'] = this.iso8601 (timestamp);
         this.tickers[symbol] = parsed;
         const messageHash = 'ticker:' + symbol;
         client.resolve(this.tickers[symbol], messageHash);
@@ -613,6 +617,7 @@ class bybit extends bybit$1["default"] {
      * @returns {object} a [ticker structure]{@link https://docs.ccxt.com/?id=ticker-structure}
      */
     async watchBidsAsks(symbols = undefined, params = {}) {
+        this.isWatchingBidsAsks = true;
         await this.loadMarkets();
         symbols = this.marketSymbols(symbols, undefined, false);
         const messageHashes = [];
@@ -992,11 +997,16 @@ class bybit extends bybit$1["default"] {
         const symbol = market['symbol'];
         const timestamp = this.safeInteger(message, 'ts');
         if (!(symbol in this.orderbooks)) {
-            this.orderbooks[symbol] = this.orderBook();
+            this.orderbooks[symbol] = this.orderBook({}, this.parseNumber(limit));
         }
         const orderbook = this.orderbooks[symbol];
         orderbook['symbol'] = symbol;
         if (isSnapshot) {
+            // Reset book if depth of snapshot is higher than actual one, so that we can adapt to the new depth
+            const depth = this.parseNumber(limit);
+            if (depth > orderbook.depth) {
+                this.orderbooks[symbol] = this.orderBook({}, depth);
+            }
             const snapshot = this.parseOrderBook(data, symbol, timestamp, 'b', 'a');
             orderbook.reset(snapshot);
         }
@@ -1006,12 +1016,13 @@ class bybit extends bybit$1["default"] {
             this.handleDeltas(orderbook['asks'], asks);
             this.handleDeltas(orderbook['bids'], bids);
             orderbook['timestamp'] = timestamp;
-            orderbook['datetime'] = this.iso8601(timestamp);
+            // orderbook['datetime'] = this.iso8601 (timestamp);
+            orderbook['datetime'] = undefined;
         }
         const messageHash = 'orderbook' + ':' + symbol;
         this.orderbooks[symbol] = orderbook;
         client.resolve(orderbook, messageHash);
-        if (limit === '1') {
+        if (limit === '1' && this.isWatchingBidsAsks) {
             const bidask = this.parseWsBidAsk(this.orderbooks[symbol], market);
             const newBidsAsks = {};
             newBidsAsks[symbol] = bidask;

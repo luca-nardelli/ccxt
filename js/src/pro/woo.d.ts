@@ -222,4 +222,6 @@ export default class woo extends wooRest {
     handlePong(client: Client, message: any): any;
     handleSubscribe(client: Client, message: any): any;
     handleAuth(client: Client, message: any): void;
+    watchBbo(symbol: string, limit?: Int, params?: {}): Promise<any>;
+    handleBbo(client: Client, message: any): void;
 }
